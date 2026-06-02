@@ -322,8 +322,9 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <button class="nsb" onclick="showNumTab('pro2',this)">⚽ Joueurs ELITE</button>
     <button class="nsb" onclick="showNumTab('espoir',this)">⚽ Joueurs ESPOIR</button>
     <button class="nsb" onclick="showNumTab('tous',this)">🌍 Tous les joueurs</button>
-    <button class="nsb" onclick="showNumTab('staff-pro1',this)">👔 Staff PRO 1</button>
-    <button class="nsb" onclick="showNumTab('staff-pro2',this)">👔 Staff PRO 2</button>
+    <button class="nsb" onclick="showNumTab('staff-pro1',this)">👔 Staff PRO</button>
+    <button class="nsb" onclick="showNumTab('staff-pro2',this)">👔 Staff ELITE</button>
+    <button class="nsb" onclick="showNumTab('staff-espoir',this)">👔 Staff ESPOIR</button>
   </div>
   <div id="numContent"></div>
 </div>
@@ -556,8 +557,9 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     </div>
     <div class="fg"><label class="fl">Groupe</label>
       <select class="fs" id="sGroupe">
-        <option value="PRO 1">👔 Staff PRO 1</option>
-        <option value="PRO 2">👔 Staff PRO 2</option>
+        <option value="PRO 1">👔 Staff PRO</option>
+        <option value="PRO 2">👔 Staff ELITE</option>
+        <option value="ESPOIR">👔 Staff ESPOIR</option>
       </select>
     </div>
   </div>
@@ -713,6 +715,7 @@ let STAFF_PRO2=[
   {id:'sp324',initiales:'LM',nom:'MACQUIN',tailles:{'VESTE SORTIE X1':'L','PANTALON SORTIE X1':'L','TSHIRT SORTIE X1':'L','SHORT SORTIE X1':'L','DOUDOUNE X1':'L'}},
   {id:'sp325',initiales:'PV',nom:'VIILVAUX',tailles:{'VESTE SORTIE X1':'L','PANTALON SORTIE X1':'M','TSHIRT SORTIE X1':'L','SHORT SORTIE X1':'M','DOUDOUNE X1':'L'}}
 ];
+let STAFF_ESPOIR=[];
 let staffNextId=326;
 let FLOCAGE=[
   // Grande taille — maillots
@@ -990,8 +993,9 @@ function inlineEdit(cell,aid,taille){
   addGroup(JOUEURS.filter(j=>j.groupe==='PRO 1'),'Joueur PRO');
   addGroup(JOUEURS.filter(j=>j.groupe==='PRO 2'),'Joueur ELITE');
   addGroup(JOUEURS.filter(j=>j.groupe==='ESPOIR'),'Joueur ESPOIR');
-  addGroup(STAFF_PRO1,'Staff PRO 1');
-  addGroup(STAFF_PRO2,'Staff PRO 2');
+  addGroup(STAFF_PRO1,'Staff PRO');
+  addGroup(STAFF_PRO2,'Staff ELITE');
+  addGroup(STAFF_ESPOIR,'Staff ESPOIR');
 
   // Colonnes numérotation
   const colSel=document.getElementById('attribCol');
@@ -1020,7 +1024,7 @@ function saveAttrib(){
 
   // Numérotation : on utilise le delta (retiré = +Nb, ajouté = −Nb)
   if(person && col){
-    const allP=[...JOUEURS,...STAFF_PRO1,...STAFF_PRO2];
+    const allP=[...JOUEURS,...STAFF_PRO1,...STAFF_PRO2,...STAFF_ESPOIR];
     const matched=allP.find(p=>{
       const fullName=(p.nom||'').toLowerCase();
       return person.toLowerCase().includes(fullName) && fullName.length>1;
@@ -1132,8 +1136,9 @@ function askDelete(id){
   _addG(JOUEURS.filter(j=>j.groupe==='PRO 1'),'Joueur PRO');
   _addG(JOUEURS.filter(j=>j.groupe==='PRO 2'),'Joueur ELITE');
   _addG(JOUEURS.filter(j=>j.groupe==='ESPOIR'),'Joueur ESPOIR');
-  _addG(STAFF_PRO1,'Staff PRO 1');
-  _addG(STAFF_PRO2,'Staff PRO 2');
+  _addG(STAFF_PRO1,'Staff PRO');
+  _addG(STAFF_PRO2,'Staff ELITE');
+  _addG(STAFF_ESPOIR,'Staff ESPOIR');
   openM('mDel');
 }
 function confirmDelete(){
@@ -1190,6 +1195,7 @@ function _matchR(){const r=[['Match','Date','Lieu','Compétition','Résultat','C
 function _numJR(){const h=['N°','Nom','Groupe',...customColsJ.flatMap(c=>[c+' Taille',c+' Nb'])];return [h,...JOUEURS.map(j=>[j.num,j.nom,j.groupe,...customColsJ.flatMap(c=>[j.tailles[c]||'',j.tailles[c+'_nb']||''])])];}
 function _numS1R(){const h=['Init.','Nom',...customColsS.flatMap(c=>[c+' Taille',c+' Nb'])];return [h,...STAFF_PRO1.map(s=>[s.initiales,s.nom,...customColsS.flatMap(c=>[s.tailles[c]||'',s.tailles[c+'_nb']||''])])];}
 function _numS2R(){const h=['Init.','Nom',...customColsS.flatMap(c=>[c+' Taille',c+' Nb'])];return [h,...STAFF_PRO2.map(s=>[s.initiales,s.nom,...customColsS.flatMap(c=>[s.tailles[c]||'',s.tailles[c+'_nb']||''])])];}
+function _numSER(){const h=['Init.','Nom',...customColsS.flatMap(c=>[c+' Taille',c+' Nb'])];return [h,...STAFF_ESPOIR.map(s=>[s.initiales,s.nom,...customColsS.flatMap(c=>[s.tailles[c]||'',s.tailles[c+'_nb']||''])])];}
 function _flocR(){const r=[['Couleur','Section','Seuil','0','1','2','3','4','5','6','7','8','9','Total']];FLOCAGE.forEach(function(f){r.push([f.label,f.sub,f.seuil,...DIGITS.map(d=>f.stock[d]??0),Object.values(f.stock).reduce((s,v)=>s+v,0)]);});return r;}
 function _todoR(){const r=[['Titre','Date','Priorité','Commentaire','Statut']];TODOS.forEach(function(t){r.push([t.titre,t.date||'',t.prio,t.comment||'',t.done?'Fait':'À faire']);});return r;}
 function _histoR(){const r=[['Date','Article','Attribué à','Quantité','Commentaire','Prix']];HISTORIQUE.forEach(function(h){r.push([h.date,h.article,h.beneficiaire,h.qty,h.comment,h.prix]);});return r;}
@@ -1241,7 +1247,7 @@ function expTodoICS(){
 }
 function expHistoCSV(){_dlCSV(_histoR().map(r=>r.join(',')).join('\n'),'historique.csv');}
 function expHistoXLSX(){_dlXLSX([{n:'Historique',r:_histoR()}],'historique.xlsx');}
-function expAllXLSX(){_dlXLSX([{n:'Inventaire',r:_invR()},{n:'Match',r:_matchR()},{n:'Joueurs',r:_numJR()},{n:'Staff PRO 1',r:_numS1R()},{n:'Staff PRO 2',r:_numS2R()},{n:'Flocage',r:_flocR()},{n:'Todo',r:_todoR()},{n:'Historique',r:_histoR()}],'SDR_complet.xlsx');}
+function expAllXLSX(){_dlXLSX([{n:'Inventaire',r:_invR()},{n:'Match',r:_matchR()},{n:'Joueurs',r:_numJR()},{n:'Staff PRO',r:_numS1R()},{n:'Staff ELITE',r:_numS2R()},{n:'Staff ESPOIR',r:_numSER()},{n:'Flocage',r:_flocR()},{n:'Todo',r:_todoR()},{n:'Historique',r:_histoR()}],'SDR_complet.xlsx');}
 
 // ════ NUMÉROTATION ════
 function showNumTab(tab,el){currentNumTab=tab;document.querySelectorAll('.nsb').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderNumerotation();}
@@ -1252,7 +1258,8 @@ function renderNumerotation(){
   else if(currentNumTab==='espoir') renderNumJ(cont,JOUEURS.filter(j=>j.groupe==='ESPOIR'),'⚽ Joueurs ESPOIR');
   else if(currentNumTab==='tous') renderNumTous(cont);
   else if(currentNumTab==='staff-pro1') renderNumS(cont,STAFF_PRO1,'PRO 1');
-  else renderNumS(cont,STAFF_PRO2,'PRO 2');
+  else if(currentNumTab==='staff-pro2') renderNumS(cont,STAFF_PRO2,'PRO 2');
+  else renderNumS(cont,STAFF_ESPOIR,'ESPOIR');
 }
 function renderNumJ(cont,list,title){
   const cols=customColsJ;
@@ -1279,8 +1286,8 @@ function renderNumTous(cont){
     const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value" placeholder="0"></td>';}).join('');
     return '<tr><td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')" >'+j.num+'</td><td style="cursor:pointer;white-space:nowrap" onclick="openJoueurEdit(\''+j.id+'\')" ><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'+cells+'</tr>';
   }).join('');
-  cont.innerHTML='<div style="background:#f0fff4;border:2px solid #27ae60;border-radius:9px;padding:8px 13px;margin-bottom:13px;font-size:.73rem;font-weight:700;color:#155724">🌍 Vue consolidée — données en direct depuis les tableaux PRO 1 & PRO 2. <span class="nbp1">PRO 1</span> <span class="nbp2">PRO 2</span> <span class="nbpt">Prêt</span></div>'
-  +'<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">🌍 Tous les Joueurs</span><div style="display:flex;gap:6px"><button class="btn btn-g btn-sm" onclick="ajoutColJ()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expTousXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr><th rowspan="2" style="vertical-align:middle;min-width:36px">N°</th><th rowspan="2" style="vertical-align:middle;min-width:120px">Nom</th>'+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  cont.innerHTML='<div style="background:#f0fff4;border:2px solid #27ae60;border-radius:9px;padding:8px 13px;margin-bottom:13px;font-size:.73rem;font-weight:700;color:#155724">🌍 Vue consolidée — données en direct depuis les tableaux PRO, ELITE &amp; ESPOIR. <span class="nbp1">PRO</span> <span class="nbp2">ELITE</span> <span class="nbespoir">ESPOIR</span> <span class="nbpt">Prêt</span></div>'
+  +'<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">🌍 Tous les Joueurs</span><div style="display:flex;gap:6px"><button class="btn btn-or btn-sm" onclick="openJoueurAdd()">➕ Joueur</button><button class="btn btn-g btn-sm" onclick="ajoutColJ()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expTousXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr><th rowspan="2" style="vertical-align:middle;min-width:36px">N°</th><th rowspan="2" style="vertical-align:middle;min-width:120px">Nom</th>'+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 function expTousXLSX(){
   const h=['N°','Nom','Groupe',...customColsJ.flatMap(c=>[c+' Taille',c+' Nb'])];
@@ -1300,7 +1307,10 @@ function renderNumS(cont,list,title){
   }).join('');
   cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">👔 Staff '+title+'</span><div style="display:flex;gap:6px"><button class="btn btn-or btn-sm" onclick="ajoutStaff(\''+title+'\')">➕</button><button class="btn btn-g btn-sm" onclick="ajoutColS()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expNumXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr><th rowspan="2" style="vertical-align:middle">Init.</th><th rowspan="2" style="vertical-align:middle">Nom</th>'+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
-function updateStaff(id,col,v,titre){const l=titre==='PRO 1'?STAFF_PRO1:STAFF_PRO2;const s=l.find(x=>x.id===id);if(s)s.tailles[col]=v;}
+function updateStaff(id,col,v,titre){
+  const l=titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
+  const s=l.find(x=>x.id===id);if(s)s.tailles[col]=v;
+}
 function ajoutColJ(){const n=prompt('Nom de la nouvelle colonne :');if(n){customColsJ.push(n);renderNumerotation();}}
 function ajoutColS(){const n=prompt('Nom de la nouvelle colonne :');if(n){customColsS.push(n);renderNumerotation();}}
 // ─── Joueur modal helpers ───
@@ -1339,6 +1349,17 @@ function _readColsGrid(cols, prefix){
 function addJoueur(){
   editingJoueurId=null;
   document.getElementById('mJT').textContent='➕ Nouveau Joueur';
+  document.getElementById('jNum').value='';
+  document.getElementById('jNom').value='';
+  document.getElementById('jGroupe').value='PRO 1';
+  document.getElementById('jDelBtn').style.display='none';
+  _buildColsGrid('jColsGrid', customColsJ, {}, 'jc');
+  openM('mJoueur');
+}
+
+function openJoueurAdd(){
+  editingJoueurId=null;
+  document.getElementById('mJT').textContent='➕ Nouveau joueur';
   document.getElementById('jNum').value='';
   document.getElementById('jNom').value='';
   document.getElementById('jGroupe').value='PRO 1';
@@ -1398,7 +1419,7 @@ function ajoutStaff(titre){
 }
 
 function openStaffEdit(id,titre){
-  const l=titre==='PRO 1'?STAFF_PRO1:STAFF_PRO2;
+  const l=titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
   const s=l.find(x=>x.id===id);
   editingStaffId=id;
   editingStaffGroupe=titre;
@@ -1417,10 +1438,10 @@ function saveStaff(){
   const init=(document.getElementById('sInit').value.trim()||nom.slice(0,2)).toUpperCase();
   const groupe=document.getElementById('sGroupe').value;
   const tailles=_readColsGrid(customColsS,'sc');
-  const l=groupe==='PRO 1'?STAFF_PRO1:STAFF_PRO2;
+  const l=groupe==='PRO 1'?STAFF_PRO1:groupe==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
   if(editingStaffId){
     // Peut avoir changé de groupe
-    const oldL=editingStaffGroupe==='PRO 1'?STAFF_PRO1:STAFF_PRO2;
+    const oldL=editingStaffGroupe==='PRO 1'?STAFF_PRO1:editingStaffGroupe==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
     const idx=oldL.findIndex(x=>x.id===editingStaffId);
     if(idx>=0){
       const s=oldL[idx];
@@ -1442,6 +1463,7 @@ function deleteStaff(){
   if(!editingStaffId||!confirm('Supprimer ce membre du staff ?'))return;
   STAFF_PRO1=STAFF_PRO1.filter(x=>x.id!==editingStaffId);
   STAFF_PRO2=STAFF_PRO2.filter(x=>x.id!==editingStaffId);
+  STAFF_ESPOIR=STAFF_ESPOIR.filter(x=>x.id!==editingStaffId);
   closeM('mStaff');
   renderNumerotation();
 }
@@ -1761,7 +1783,7 @@ function _syncStatus(s){
 }
 
 function _getState(){
-  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
+  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
 }
 
 async function sbSave(){
@@ -1817,6 +1839,7 @@ async function sbLoad(){
     if(s.JOUEURS)    JOUEURS    =s.JOUEURS;
     if(s.STAFF_PRO1) STAFF_PRO1 =s.STAFF_PRO1;
     if(s.STAFF_PRO2) STAFF_PRO2 =s.STAFF_PRO2;
+    if(s.STAFF_ESPOIR) STAFF_ESPOIR=s.STAFF_ESPOIR;
     if(s.MATCHS)     MATCHS     =s.MATCHS;
     if(s.TODOS)      TODOS      =s.TODOS;
     if(s.HISTORIQUE) HISTORIQUE =s.HISTORIQUE;
