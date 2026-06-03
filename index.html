@@ -288,19 +288,13 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
   </nav>
 </header>
 
-<button class="fab" id="fabBtn" onclick="openM('mAjout')">＋</button>
+<button class="fab" id="fabBtn" onclick="_fillCatSelect('aCat','');openM('mAjout')">＋</button>
 
 <main>
 <div class="page active" id="page-inventaire">
-  <div class="fbar">
+  <div class="fbar" id="fbarBtns">
     <input class="si" type="text" id="searchInput" placeholder="🔍 Rechercher…" oninput="renderCards()">
-    <button class="fbtn active" onclick="setFilter('tous',this)">Tous</button>
-    <button class="fbtn" onclick="setFilter('match',this)">⚽ Match</button>
-    <button class="fbtn" onclick="setFilter('gardien',this)">🧤 Gardiens</button>
-    <button class="fbtn" onclick="setFilter('entrainement',this)">🏃 Entraînement</button>
-    <button class="fbtn" onclick="setFilter('survetement',this)">🧥 Tenue sortie</button>
-    <button class="fbtn" onclick="setFilter('chaussure',this)">👟 Chaussures</button>
-    <button class="fbtn" onclick="setFilter('accessoire',this)">🎽 Accessoires</button>
+    <!-- boutons générés dynamiquement par renderFilterBtns() -->
   </div>
   <div class="cg" id="cardsGrid"></div>
 </div>
@@ -371,11 +365,7 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <div class="fg"><label class="fl">Icône</label><input class="fi" id="aI" placeholder="⚽ 👟" style="font-size:1.1rem"></div>
   </div>
   <div class="frow">
-    <div class="fg"><label class="fl">Catégorie</label><select class="fs" id="aCat">
-      <option value="match">⚽ Match</option><option value="gardien">🧤 Gardiens</option>
-      <option value="entrainement">🏃 Entraînement</option><option value="survetement">🧥 Tenue sortie</option>
-      <option value="chaussure">👟 Chaussures</option><option value="accessoire">🎽 Accessoires</option>
-    </select></div>
+    <div class="fg"><label class="fl">Catégorie</label><select class="fs" id="aCat"></select></div>
     <div class="fg"><label class="fl">Type tailles</label><select class="fs" id="aTyp">
       <option value="textile">Textile (XS→XXL)</option><option value="chaussure">Chaussures (38→49)</option><option value="unique">Taille unique</option>
     </select></div>
@@ -383,6 +373,10 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
   <div class="frow">
     <div class="fg"><label class="fl">Prix (€)</label><input class="fi" id="aPx" type="number" min="0" step="0.01" placeholder="79.99"></div>
     <div class="fg"><label class="fl">Seuil</label><input class="fi" id="aSe" type="number" min="0" value="10"></div>
+  </div>
+  <div class="fg" style="display:flex;align-items:center;gap:10px;background:#fff8e1;border-radius:8px;padding:9px 13px">
+    <input type="checkbox" id="aHorsStock" style="width:18px;height:18px;cursor:pointer;accent-color:var(--r)">
+    <label for="aHorsStock" style="font-size:.78rem;font-weight:700;cursor:pointer;color:#7b5800">⚠️ Hors stock total — cet article n'apparaîtra pas dans les compteurs (articles, unités, valeur)</label>
   </div>
   <div class="mfooter"><button class="btn btn-r" style="flex:1" onclick="creerArticle()">✅ Créer</button><button class="btn btn-g" onclick="closeM('mAjout')">Annuler</button></div>
 </div></div>
@@ -394,11 +388,7 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <div class="fg"><label class="fl">Icône</label><input class="fi" id="eI" style="font-size:1.1rem"></div>
   </div>
   <div class="frow">
-    <div class="fg"><label class="fl">Catégorie</label><select class="fs" id="eCat">
-      <option value="match">⚽ Match</option><option value="gardien">🧤 Gardiens</option>
-      <option value="entrainement">🏃 Entraînement</option><option value="survetement">🧥 Tenue sortie</option>
-      <option value="chaussure">👟 Chaussures</option><option value="accessoire">🎽 Accessoires</option>
-    </select></div>
+    <div class="fg"><label class="fl">Catégorie</label><select class="fs" id="eCat"></select></div>
     <div class="fg"><label class="fl">Type tailles</label><select class="fs" id="eTyp">
       <option value="textile">Textile (XS→XXL)</option><option value="chaussure">Chaussures (38→49)</option><option value="unique">Taille unique</option>
     </select></div>
@@ -406,6 +396,10 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
   <div class="frow">
     <div class="fg"><label class="fl">Prix (€)</label><input class="fi" id="ePx" type="number" min="0" step="0.01"></div>
     <div class="fg"><label class="fl">Seuil</label><input class="fi" id="eSe" type="number" min="0"></div>
+  </div>
+  <div class="fg" style="display:flex;align-items:center;gap:10px;background:#fff8e1;border-radius:8px;padding:9px 13px">
+    <input type="checkbox" id="eHorsStock" style="width:18px;height:18px;cursor:pointer;accent-color:var(--r)">
+    <label for="eHorsStock" style="font-size:.78rem;font-weight:700;cursor:pointer;color:#7b5800">⚠️ Hors stock total — exclure des compteurs (articles, unités, valeur)</label>
   </div>
   <div class="fg"><label class="fl">📷 Photo</label>
     <div class="pdrop" id="pDrop"><input type="file" id="pInput" accept="image/*" onchange="handlePhoto(event)">
@@ -481,6 +475,35 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <div class="fg"><label class="fl">Seuil</label><input class="fi" id="faSeuil" type="number" min="0" value="5"></div>
   </div>
   <div class="mfooter"><button class="btn btn-r" style="flex:1" onclick="creerFlocage()">✅ Créer</button><button class="btn btn-g" onclick="closeM('mFlocAjout')">Annuler</button></div>
+</div></div>
+
+<div class="overlay hidden" id="mFlocAttrib"><div class="modal">
+  <div class="mtitle">🔡 Modifier le stock — Flocage</div>
+  <div style="background:#fff5f7;border-radius:8px;padding:9px 13px;margin-bottom:12px;font-size:.8rem;font-weight:700">
+    <div>Flocage : <strong id="fAttribLabel" style="color:var(--r)"></strong> — Numéro : <strong id="fAttribDigit" style="color:var(--r)"></strong></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+      <span>Stock actuel :</span>
+      <span id="fAttribCurrent" style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--r)">0</span>
+      <span style="color:#aaa;font-size:.7rem">unités</span>
+      <span style="margin-left:auto;font-size:.75rem;color:#555">→ Nouveau total : <strong id="fAttribNewTotal" style="color:var(--r)">0</strong></span>
+    </div>
+  </div>
+  <div class="fg">
+    <label class="fl">➕➖ Quantité à ajouter / retirer</label>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button type="button" id="fAttribMinus" style="width:42px;height:42px;border:none;border-radius:8px;background:#f8d7da;color:#c0392b;font-size:1.5rem;font-weight:900;cursor:pointer;flex-shrink:0">−</button>
+      <input class="fi" id="fAttribDelta" type="number" value="0" style="text-align:center;font-size:1.2rem;font-weight:800;max-width:110px" oninput="updateFAttribPreview()">
+      <button type="button" id="fAttribPlus" style="width:42px;height:42px;border:none;border-radius:8px;background:#d4edda;color:#27ae60;font-size:1.5rem;font-weight:900;cursor:pointer;flex-shrink:0">+</button>
+    </div>
+    <p style="font-size:.63rem;color:#888;margin-top:5px;font-weight:600">Saisissez un nombre positif pour <b style="color:#27ae60">ajouter</b> au stock, négatif pour <b style="color:#c0392b">retirer</b></p>
+  </div>
+  <div class="fg"><label class="fl">💬 Commentaire</label>
+    <input class="fi" id="fAttribComment" placeholder="Optionnel…">
+  </div>
+  <div class="mfooter">
+    <button class="btn btn-r" style="flex:1" onclick="saveFlocAttrib()">✅ Valider</button>
+    <button class="btn btn-g" onclick="closeM('mFlocAttrib')">Annuler</button>
+  </div>
 </div></div>
 
 <div class="overlay hidden" id="mFlocEdit"><div class="modal" style="max-width:400px">
@@ -584,6 +607,26 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
   </div>
   <div class="fg"><label class="fl">Commentaire</label><textarea class="fi" id="tdC" rows="2" style="resize:vertical" placeholder="Détails…"></textarea></div>
   <div class="mfooter"><button class="btn btn-r" style="flex:1" onclick="saveTodo()">✅ OK</button><button class="btn btn-red" id="tdDel" style="display:none" onclick="deleteTodo()">🗑</button><button class="btn btn-g" onclick="closeM('mTodo')">Annuler</button></div>
+</div></div>
+
+<div class="overlay hidden" id="mCat"><div class="modal" style="max-width:500px">
+  <div class="mtitle">🏷️ Gérer les catégories</div>
+  <div id="catList" style="margin-bottom:13px"></div>
+  <div style="background:#f8f8f8;border-radius:9px;padding:12px;margin-bottom:10px">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:.85rem;color:var(--r);letter-spacing:1px;margin-bottom:8px">➕ Nouvelle catégorie</div>
+    <div class="fg"><label class="fl">Choisir une icône</label>
+      <div id="iconPicker" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;max-height:160px;overflow-y:auto;padding:6px;background:#fff;border-radius:8px;border:1px solid #eee">
+        <!-- généré par JS -->
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="selectedIcon" style="font-size:1.6rem;min-width:32px">📁</span>
+        <input class="fi" id="newCatIcon" placeholder="Ou coller une icône personnalisée" style="font-size:1.1rem;flex:1" oninput="document.getElementById('selectedIcon').textContent=this.value||'📁'">
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Nom *</label><input class="fi" id="newCatNom" placeholder="Ex: Récupération"></div>
+    <button class="btn btn-r" style="width:100%" onclick="addCat()">➕ Ajouter cette catégorie</button>
+  </div>
+  <div class="mfooter"><button class="btn btn-g" style="flex:1" onclick="closeM('mCat')">Fermer</button></div>
 </div></div>
 
 <div class="overlay hidden" id="mExport"><div class="modal">
@@ -736,7 +779,7 @@ let FLOCAGE=[
 // ════ CONSTANTES ════
 const T_TX=['XS','S','M','L','XL','XXL'];
 const T_CH=['38','39','40','41','42','43','44','45','46','47','48','49'];
-const CAT={match:'⚽ Match',gardien:'🧤 Gardiens',entrainement:'🏃 Entraînement',survetement:'🧥 Tenue sortie',chaussure:'👟 Chaussures',accessoire:'🎽 Accessoires'};
+let CAT={match:'⚽ Match',gardien:'🧤 Gardiens',entrainement:'🏃 Entraînement',survetement:'🧥 Tenue sortie',chaussure:'👟 Chaussures',accessoire:'🎽 Accessoires'};
 const NUM_COLS_J=['SWEAT ENTR X3','PANTALON ENTR X3','MAILLOT ENTR X3','SHORT ENTR X3','KWAY X1','CHO7 HAUTES X3','SOQUET. NOIR X3','SOUS SHORT X2','SOUS MAILLOT X2','VESTE SORTIE X2','PANTALON SORTIE X2','TSHIRT SORTIE X2','SHORT SORTIE X1','DOUDOUNE SORTIE X1','CLAQUETTES X1','CHAUSSURES SORTIE X1','MAILLOT MATCH','SHORT MATCH'];
 const NUM_COLS_S=['SWEAT ENTR X3','PANTALON ENTR X3','MAILLOT ENTR X3','SHORT ENTR X3','KWAY X1','PARKA ENTR X1','SOQUET. NOIR X3','SOUS SHORT X2','SOUS MAILLOT X2','VESTE SORTIE X1','PANTALON SORTIE X1','TSHIRT SORTIE X1','SHORT SORTIE X1','DOUDOUNE X1','CLAQUETTES X1','CRAMPONS X1','RUNNING X1','CHAUSSURES SORTIE X1'];
 const DIGITS=['0','1','2','3','4','5','6','7','8','9'];
@@ -818,11 +861,124 @@ const st=a=>{const t=tot(a);return t===0?'rupture':t<=a.seuil?'critique':'ok';};
 const euro=v=>parseFloat(v).toLocaleString('fr-FR',{minimumFractionDigits:2})+' €';
 const cellSt=(q,s)=>q===0?'t-rupt':q<=Math.max(1,Math.floor(s/10))?'t-crit':'t-ok';
 
+// ════ CATÉGORIES DYNAMIQUES ════
+function _fillCatSelect(selId, currentVal){
+  const sel=document.getElementById(selId);
+  sel.innerHTML=Object.entries(CAT).map(([k,v])=>'<option value="'+k+'"'+(k===currentVal?' selected':'')+'>'+v+'</option>').join('');
+}
+
+function renderFilterBtns(){
+  const bar=document.getElementById('fbarBtns');
+  // Conserver l'input de recherche
+  const si=document.getElementById('searchInput');
+  bar.innerHTML='';
+  bar.appendChild(si);
+  // Bouton TOUS
+  const all=document.createElement('button');
+  all.className='fbtn'+(activeFilter==='tous'?' active':'');
+  all.textContent='Tous';
+  all.onclick=function(){setFilter('tous',this);};
+  bar.appendChild(all);
+  // Un bouton par catégorie
+  Object.entries(CAT).forEach(([k,v])=>{
+    const b=document.createElement('button');
+    b.className='fbtn'+(activeFilter===k?' active':'');
+    b.textContent=v;
+    b.onclick=function(){setFilter(k,this);};
+    bar.appendChild(b);
+  });
+  // Bouton gérer catégories
+  const mg=document.createElement('button');
+  mg.className='fbtn';
+  mg.style.cssText='background:rgba(255,255,255,.1);border-style:dashed;opacity:.75;font-size:.6rem';
+  mg.textContent='⚙️ Catégories';
+  mg.onclick=function(){openCatManager();};
+  bar.appendChild(mg);
+}
+
+const _ICONS=['⚽','🧤','🏃','🧥','👟','🎽','🩳','👕','🧦','🎒','🏋️','🤸','🚴','🏊','🥋','🎯','🏆','🥇','🎖️','📦','🛡️','⚡','🔥','💪','🩺','💊','🧴','🧹','📋','📁','🗂️','💼','🎿','🏒','🏸','🎾','⛷️','🤾','🏇','🎱','🥊','🩴','🧢','🪖','👒','🕶️','🧣','🧤','🌟','⭐','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤'];
+
+function openCatManager(){
+  // Générer le panel d'icônes
+  const picker=document.getElementById('iconPicker');
+  picker.innerHTML=_ICONS.map(ic=>'<button type="button" onclick="selectCatIcon(\''+ic+'\')" style="width:36px;height:36px;border:2px solid transparent;border-radius:7px;background:#fff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border .15s" title="'+ic+'">'+ic+'</button>').join('');
+  document.getElementById('newCatIcon').value='';
+  document.getElementById('selectedIcon').textContent='📁';
+  document.getElementById('newCatNom').value='';
+  renderCatList();
+  openM('mCat');
+}
+
+function selectCatIcon(ic){
+  document.getElementById('newCatIcon').value=ic;
+  document.getElementById('selectedIcon').textContent=ic;
+  // Highlight sélection
+  document.querySelectorAll('#iconPicker button').forEach(b=>{
+    b.style.borderColor=b.textContent===ic?'var(--r)':'transparent';
+    b.style.background=b.textContent===ic?'#fff0f2':'#fff';
+  });
+}
+
+function renderCatList(){
+  const box=document.getElementById('catList');
+  box.innerHTML=Object.entries(CAT).map(([k,v])=>{
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border-radius:7px;margin-bottom:5px;border:1px solid #eee">'
+      +'<span style="font-size:1rem;min-width:24px">'+v.split(' ')[0]+'</span>'
+      +'<input style="flex:1;border:none;border-bottom:1px dashed #ccc;font-weight:700;font-size:.8rem;padding:2px 4px;outline:none;background:transparent" value="'+v.replace(/^[^\s]+\s/,'')+'" onchange="renameCat(\''+k+'\',this.value)">'
+      +'<span style="font-size:.6rem;color:#aaa;font-weight:700;margin-left:4px">('+DATA.filter(a=>a.cat===k).length+' articles)</span>'
+      +'<button onclick="deleteCat(\''+k+'\')" style="background:#fee;border:1px solid #f5c6c6;color:#c0392b;border-radius:5px;padding:2px 8px;font-size:.65rem;font-weight:800;cursor:pointer">🗑</button>'
+      +'</div>';
+  }).join('');
+}
+
+function renameCat(key, newName){
+  const icon=CAT[key].split(' ')[0];
+  CAT[key]=icon+' '+newName.trim();
+  renderFilterBtns();renderCards();sbSchedule();
+  renderCatList();
+}
+
+function addCat(){
+  const icon=document.getElementById('selectedIcon').textContent.trim()||document.getElementById('newCatIcon').value.trim()||'📁';
+  const nom=document.getElementById('newCatNom').value.trim();
+  if(!nom){alert('Nom obligatoire');return;}
+  const key='cat_'+Date.now();
+  CAT[key]=icon+' '+nom;
+  document.getElementById('newCatIcon').value='';
+  document.getElementById('selectedIcon').textContent='📁';
+  document.getElementById('newCatNom').value='';
+  // Reset picker
+  document.querySelectorAll('#iconPicker button').forEach(b=>{b.style.borderColor='transparent';b.style.background='#fff';});
+  renderFilterBtns();renderCatList();sbSchedule();
+  _showToast('Catégorie "'+nom+'" créée !');
+}
+
+function deleteCat(key){
+  const count=DATA.filter(a=>a.cat===key).length;
+  if(count>0){
+    if(!confirm('Cette catégorie contient '+count+' article(s). Les articles seront déplacés en "Accessoires". Continuer ?'))return;
+    DATA.forEach(a=>{if(a.cat===key)a.cat='accessoire';});
+  } else {
+    if(!confirm('Supprimer la catégorie "'+CAT[key]+'" ?'))return;
+  }
+  delete CAT[key];
+  if(activeFilter===key)activeFilter='tous';
+  renderFilterBtns();renderCatList();renderCards();sbSchedule();
+}
+
+function setFilter(f,el){
+  activeFilter=f;
+  document.querySelectorAll('.fbar .fbtn').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderCards();
+}
+
 function updH(){
-  const t=DATA.reduce((s,a)=>s+tot(a),0);
-  const v=DATA.reduce((s,a)=>s+val(a),0);
+  const incl=DATA.filter(a=>!a.horsStock);
+  const t=incl.reduce((s,a)=>s+tot(a),0);
+  const v=incl.reduce((s,a)=>s+val(a),0);
   const al=DATA.filter(a=>st(a)!=='ok'&&!a.vu).length;
-  document.getElementById('sA').textContent=DATA.length;
+  document.getElementById('sA').textContent=incl.length;
   document.getElementById('sS').textContent=t.toLocaleString('fr-FR');
   document.getElementById('sV').textContent=Math.round(v).toLocaleString('fr-FR');
   const el=document.getElementById('sAl');
@@ -913,12 +1069,6 @@ function goPage(pid){
   });
 })();
 
-function setFilter(f,el){
-  activeFilter=f;
-  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  renderCards();
-}
 
 // ════ INLINE POPOVER ════
 function _closePop(){
@@ -1061,7 +1211,7 @@ function renderCards(){
   const grid=document.getElementById('cardsGrid');grid.innerHTML='';
   const list=DATA.filter(a=>(activeFilter==='tous'||a.cat===activeFilter)&&a.nom.toLowerCase().includes(search));
   list.forEach((a,i)=>{const el=buildCard(a);el.style.animationDelay=i*.03+'s';grid.appendChild(el);});
-  const add=document.createElement('div');add.className='add-card';add.onclick=()=>openM('mAjout');
+  const add=document.createElement('div');add.className='add-card';add.onclick=()=>{_fillCatSelect('aCat','');openM('mAjout');};
   add.innerHTML='<span style="font-size:2rem">➕</span><span style="font-family:\'Bebas Neue\',sans-serif;font-size:.95rem;color:var(--r);letter-spacing:1px">Ajouter un article</span>';
   grid.appendChild(add);updH();
 }
@@ -1096,15 +1246,18 @@ function editSeuil(id,el){
 function creerArticle(){
   const nom=document.getElementById('aN').value.trim();if(!nom){alert('Nom obligatoire');return;}
   const type=document.getElementById('aTyp').value;const stock={};tailles(type).forEach(t=>stock[t]=0);
-  DATA.push({id:nextId++,nom,icon:document.getElementById('aI').value.trim()||'📦',cat:document.getElementById('aCat').value,type,prix:+document.getElementById('aPx').value||0,seuil:+document.getElementById('aSe').value||10,stock});
-  closeM('mAjout');['aN','aI','aPx'].forEach(id=>document.getElementById(id).value='');document.getElementById('aSe').value='10';renderCards();sbSchedule();
+  const horsStock=document.getElementById('aHorsStock').checked;
+  DATA.push({id:nextId++,nom,icon:document.getElementById('aI').value.trim()||'📦',cat:document.getElementById('aCat').value,type,prix:+document.getElementById('aPx').value||0,seuil:+document.getElementById('aSe').value||10,stock,horsStock:horsStock||undefined});
+  closeM('mAjout');['aN','aI','aPx'].forEach(id=>document.getElementById(id).value='');document.getElementById('aSe').value='10';document.getElementById('aHorsStock').checked=false;renderCards();sbSchedule();
 }
 function openEdit(id){
   editId=id;const a=DATA.find(x=>x.id===id);
   document.getElementById('mStockT').textContent='✏️ '+a.nom;
   document.getElementById('eN').value=a.nom;document.getElementById('eI').value=a.icon||'📦';
-  document.getElementById('eCat').value=a.cat;document.getElementById('eTyp').value=a.type;
+  _fillCatSelect('eCat',a.cat);
+  document.getElementById('eTyp').value=a.type;
   document.getElementById('ePx').value=a.prix;document.getElementById('eSe').value=a.seuil;
+  document.getElementById('eHorsStock').checked=!!a.horsStock;
   const pv=document.getElementById('pPrev'),pr=document.getElementById('pRem'),pd=document.getElementById('pDrop');
   if(a.photo){pv.src=a.photo;pv.classList.remove('hidden');pr.classList.remove('hidden');pd.style.display='none';}
   else{pv.src='';pv.classList.add('hidden');pr.classList.add('hidden');pd.style.display='';}
@@ -1120,6 +1273,7 @@ function saveStock(){
   const nt=document.getElementById('eTyp').value;
   if(nt&&nt!==a.type){const s={};tailles(nt).forEach(t=>s[t]=0);a.stock=s;a.type=nt;}
   a.prix=+document.getElementById('ePx').value||a.prix;a.seuil=+document.getElementById('eSe').value||a.seuil;
+  a.horsStock=document.getElementById('eHorsStock').checked||undefined;
   tailles(a.type).forEach(t=>{const v=document.getElementById('eq_'+t.replace(/\//g,'_'));if(v)a.stock[t]=parseInt(v.value)||0;});
   closeM('mStock');renderCards();sbSchedule();
 }
@@ -1500,7 +1654,62 @@ function buildFlocCard(f){
   div.innerHTML='<div class="fc-head '+f.theme+'">'+thumb+'<div class="fc-info"><div class="fc-label">'+f.label+'</div><div class="fc-sub">'+f.sub+'</div></div><div class="fc-right">'+sb+'<span style="font-size:.58rem;font-weight:700;opacity:.75">Seuil:'+f.seuil+'</span></div></div><div class="fc-digits">'+digits+'</div><div class="fc-foot"><div><div style="font-size:.62rem;color:var(--m);text-transform:uppercase">Total</div><div style="font-family:\'Bebas Neue\',sans-serif;font-size:1.3rem;color:var(--r)">'+fs+'</div></div><button class="btn btn-o btn-sm" onclick="openFlocEdit(\''+f.id+'\')">⚙️</button></div>';
   return div;
 }
-function flocInline(cell,fid,digit){const f=FLOCAGE.find(x=>x.id===fid);_makePop(cell,f.stock[digit]??0,function(v){f.stock[digit]=v;renderFlocage();sbSchedule();});}
+// ════ FLOCAGE SAISIE MODALE (style inventaire) ════
+let _fAttribFid=null, _fAttribDigit=null;
+
+function flocInline(cell,fid,digit){
+  _fAttribFid=fid; _fAttribDigit=digit;
+  const f=FLOCAGE.find(x=>x.id===fid);
+  const cur=f.stock[digit]??0;
+  document.getElementById('fAttribLabel').textContent=f.label+' — '+f.sub;
+  document.getElementById('fAttribDigit').textContent=digit;
+  document.getElementById('fAttribCurrent').textContent=cur;
+  document.getElementById('fAttribNewTotal').textContent=cur;
+  document.getElementById('fAttribNewTotal').style.color='var(--r)';
+  document.getElementById('fAttribDelta').value=0;
+  document.getElementById('fAttribComment').value='';
+  document.getElementById('fAttribMinus').onclick=function(){
+    const qi=document.getElementById('fAttribDelta');
+    qi.value=(parseInt(qi.value)||0)-1;updateFAttribPreview();
+  };
+  document.getElementById('fAttribPlus').onclick=function(){
+    const qi=document.getElementById('fAttribDelta');
+    qi.value=(parseInt(qi.value)||0)+1;updateFAttribPreview();
+  };
+  openM('mFlocAttrib');
+  setTimeout(()=>document.getElementById('fAttribDelta').focus(),100);
+}
+
+function updateFAttribPreview(){
+  const f=FLOCAGE.find(x=>x.id===_fAttribFid);
+  if(!f)return;
+  const cur=f.stock[_fAttribDigit]??0;
+  const delta=parseInt(document.getElementById('fAttribDelta').value)||0;
+  const newTotal=Math.max(0,cur+delta);
+  const el=document.getElementById('fAttribNewTotal');
+  el.textContent=newTotal;
+  el.style.color=delta>0?'#27ae60':delta<0?'#c0392b':'var(--r)';
+}
+
+function saveFlocAttrib(){
+  const f=FLOCAGE.find(x=>x.id===_fAttribFid);
+  if(!f)return;
+  const cur=f.stock[_fAttribDigit]??0;
+  const delta=parseInt(document.getElementById('fAttribDelta').value)||0;
+  if(delta===0){closeM('mFlocAttrib');return;}
+  f.stock[_fAttribDigit]=Math.max(0,cur+delta);
+  const comment=document.getElementById('fAttribComment').value.trim();
+  HISTORIQUE.push({
+    date:new Date().toLocaleDateString('fr-FR'),
+    article:'Flocage '+f.label+' n°'+_fAttribDigit,
+    beneficiaire:'—',
+    qty:Math.abs(delta),
+    comment:(delta<0?'Retrait '+Math.abs(delta):delta>0?'Ajout '+delta:'')+(comment?' — '+comment:''),
+    prix:0
+  });
+  closeM('mFlocAttrib');
+  renderFlocage();sbSchedule();
+}
 function creerFlocage(){const label=document.getElementById('faL').value.trim();const sub=document.getElementById('faSub').value.trim();if(!label||!sub){alert('Nom et section obligatoires');return;}const stock={};DIGITS.forEach(d=>stock[d]=0);FLOCAGE.push({id:'f'+flocNextId++,label,sub,theme:document.getElementById('faTheme').value,seuil:+document.getElementById('faSeuil').value||5,photo:null,stock});closeM('mFlocAjout');renderFlocage();sbSchedule();}
 function openFlocEdit(fid){editFlocId=fid;const f=FLOCAGE.find(x=>x.id===fid);document.getElementById('mFlocET').textContent='⚙️ '+f.label;document.getElementById('feSeuil').value=f.seuil;const pv=document.getElementById('fPrev'),pr=document.getElementById('fRem'),pd=document.getElementById('fDropZ');if(f.photo){pv.src=f.photo;pv.classList.remove('hidden');pr.classList.remove('hidden');pd.style.display='none';}else{pv.src='';pv.classList.add('hidden');pr.classList.add('hidden');pd.style.display='';}openM('mFlocEdit');}
 function saveFlocEdit(){const f=FLOCAGE.find(x=>x.id===editFlocId);f.seuil=+document.getElementById('feSeuil').value||f.seuil;closeM('mFlocEdit');renderFlocage();sbSchedule();}
@@ -1790,7 +1999,7 @@ function _syncStatus(s){
 }
 
 function _getState(){
-  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
+  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
 }
 
 async function sbSave(){
@@ -1847,6 +2056,7 @@ async function sbLoad(){
     if(s.STAFF_PRO1) STAFF_PRO1 =s.STAFF_PRO1;
     if(s.STAFF_PRO2) STAFF_PRO2 =s.STAFF_PRO2;
     if(s.STAFF_ESPOIR) STAFF_ESPOIR=s.STAFF_ESPOIR;
+    if(s.CAT) CAT=s.CAT;
     if(s.MATCHS)     MATCHS     =s.MATCHS;
     if(s.TODOS)      TODOS      =s.TODOS;
     if(s.HISTORIQUE) HISTORIQUE =s.HISTORIQUE;
@@ -1911,6 +2121,7 @@ document.addEventListener('change', function(e){
 // ════ INIT ════
 // 1. Afficher l'app immediatement - jamais de page blanche
 try { _addSyncDot(); } catch(e){}
+try { renderFilterBtns(); } catch(e){}
 try { renderCards(); } catch(e){ document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>'; }
 try { showStartupAlert(); } catch(e){}
 
@@ -1919,7 +2130,7 @@ setTimeout(async function(){
   try {
     _showToast('Chargement...');
     const loaded = await sbLoad();
-    if(loaded){ renderCards(); _showToast('Donnees a jour'); }
+    if(loaded){ renderFilterBtns();renderCards(); _showToast('Donnees a jour'); }
     else { await sbSave(); }
   } catch(e) { _showToast('Hors-ligne'); }
   setInterval(sbPoll, 8000);
