@@ -760,6 +760,7 @@ let STAFF_PRO2=[
 ];
 let STAFF_ESPOIR=[];
 let staffNextId=326;
+let flocNextId=7;
 let FLOCAGE=[
   // Grande taille — maillots
   { id:'f1', label:'Blanc', sub:'Grande taille — Maillots', theme:'blanc', seuil:5, photo:null,
@@ -1020,8 +1021,8 @@ async function manuSave(){
   try{
     await sbSave();
     btn.textContent='✅';
-    _showToast('Données enregistrées !');
-    setTimeout(()=>btn.textContent='💾',2000);
+    _showToast('Données enregistrées ! ID: '+JBIN_ID);
+    setTimeout(()=>btn.textContent='💾',3000);
   }catch(e){
     btn.textContent='❌';
     _showToast('Erreur enregistrement');
@@ -1971,7 +1972,9 @@ function showStartupAlert(){
 // ════ JSONBIN SYNC ════
 const JBIN_ACCESS = '$2a$10$TrOcg3kWnwSBrkVDJKFuE.mZHtDNhRbHh.rI/x5ZTxY6XJ67tpGd6';
 const JBIN_MASTER = '$2a$10$/pLXUSkPWImBGzVeEb5Cte2oqm8cNvKisGdue1VGf0d0RkFa93bPe';
-let JBIN_ID = localStorage.getItem('sdr_bin_id')||null;
+const JBIN_NAME   = 'sdr-reims';
+// ID stocké en dur + localStorage comme backup
+let JBIN_ID = '6a1edd52f5f4af5e29ad346f' || localStorage.getItem('sdr_bin_id') || null;
 let _saveTimer = null;
 let _lastTs = 0;
 let _saving = false;
@@ -2040,6 +2043,23 @@ function sbSchedule(){
 }
 
 async function sbLoad(){
+  // Si pas d'ID, chercher le bin par nom
+  if(!JBIN_ID){
+    try{
+      const r=await fetch('https://api.jsonbin.io/v3/b?page=1',{
+        headers:{'X-Master-Key':JBIN_MASTER,'X-Access-Key':JBIN_ACCESS}
+      });
+      if(r.ok){
+        const d=await r.json();
+        const bins=d.result||[];
+        const found=bins.find(b=>b.snippetMeta&&b.snippetMeta.name===JBIN_NAME);
+        if(found){
+          JBIN_ID=found.snippetMeta.id;
+          localStorage.setItem('sdr_bin_id',JBIN_ID);
+        }
+      }
+    }catch(e){}
+  }
   if(!JBIN_ID){_syncStatus('off');return false;}
   _syncStatus('saving');
   try{
@@ -2130,8 +2150,15 @@ setTimeout(async function(){
   try {
     _showToast('Chargement...');
     const loaded = await sbLoad();
-    if(loaded){ renderFilterBtns();renderCards(); _showToast('Donnees a jour'); }
-    else { await sbSave(); }
+    if(loaded){
+      renderFilterBtns();renderCards();
+      // Mettre à jour l'ID en dur dans l'affichage
+      _showToast('✅ Données chargées — ID: '+JBIN_ID);
+    } else {
+      // Pas de données → première sauvegarde
+      await sbSave();
+      _showToast('Première synchronisation...');
+    }
   } catch(e) { _showToast('Hors-ligne'); }
   setInterval(sbPoll, 8000);
 }, 100);
