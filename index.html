@@ -1018,14 +1018,17 @@ function goBack(){
 async function manuSave(){
   const btn=document.getElementById('saveBtnIcon');
   btn.textContent='⏳';
+  clearTimeout(_saveTimer); // Annuler le timer auto
   try{
+    _saving=false; // Forcer même si une save était en cours
     await sbSave();
     btn.textContent='✅';
-    _showToast('Données enregistrées ! ID: '+JBIN_ID);
-    setTimeout(()=>btn.textContent='💾',3000);
+    _markClean();
+    _showToast('✅ Données enregistrées !');
+    setTimeout(()=>{btn.textContent='💾';},3000);
   }catch(e){
     btn.textContent='❌';
-    _showToast('Erreur enregistrement');
+    _showToast('❌ Erreur enregistrement');
     setTimeout(()=>btn.textContent='💾',2000);
   }
 }
@@ -2006,7 +2009,12 @@ function _getState(){
 }
 
 async function sbSave(){
-  if(_saving)return;
+  if(_saving){
+    // Si une sauvegarde est en cours, replanifier dans 800ms
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(sbSave,800);
+    return;
+  }
   _saving=true;_syncStatus('saving');
   try{
     const body=JSON.stringify(_getState());
@@ -2031,16 +2039,58 @@ async function sbSave(){
         _saving=false;_syncStatus('ok');return;
       }
     }
-    _syncStatus(r.ok?'ok':'error');
-    if(r.ok)_lastTs=Date.now();
-  }catch(e){_syncStatus('error');}
+    if(r&&r.ok){
+      _syncStatus('ok');
+      _lastTs=Date.now();
+      _markClean();
+    } else {
+      _syncStatus('error');
+      // Réessayer dans 3 secondes si erreur réseau
+      clearTimeout(_saveTimer);
+      _saveTimer=setTimeout(sbSave,3000);
+    }
+  }catch(e){
+    _syncStatus('error');
+    // Réessayer dans 3 secondes si erreur réseau
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(sbSave,3000);
+  }
   _saving=false;
 }
 
+let _pendingSave=false;
 function sbSchedule(){
+  _markDirty();
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(sbSave,1000);
+  _saveTimer=setTimeout(sbSave,500);
 }
+
+// ════ SAUVEGARDE FORCÉE À LA FERMETURE ════
+window.addEventListener('beforeunload',function(){
+  if(_pendingSave){
+    // Sauvegarde synchrone (keepalive) pour ne rien perdre à la fermeture
+    try{
+      const body=JSON.stringify(_getState());
+      navigator.sendBeacon&&navigator.sendBeacon(
+        'https://api.jsonbin.io/v3/b/'+JBIN_ID+'?accessKey='+encodeURIComponent(JBIN_ACCESS),
+        new Blob([body],{type:'application/json'})
+      );
+    }catch(e){}
+  }
+});
+
+// ════ INDICATEUR VISUEL de modifications non sauvegardées ════
+function _markDirty(){
+  _pendingSave=true;
+  const btn=document.getElementById('saveBtnIcon');
+  if(btn&&btn.textContent==='💾') btn.textContent='💾*';
+}
+function _markClean(){
+  _pendingSave=false;
+  const btn=document.getElementById('saveBtnIcon');
+  if(btn) btn.textContent='💾';
+}
+
 
 async function sbLoad(){
   // Si pas d'ID, chercher le bin par nom
@@ -2133,8 +2183,8 @@ async function sbPoll(){
 // ════ FILET DE SÉCURITÉ — sauvegarde sur tout changement de champ ════
 document.addEventListener('change', function(e){
   const t=e.target;
-  // Ignorer les champs qui ne touchent pas aux données (recherche, filtres visuels)
   if(t.id==='searchInput'||t.classList.contains('fbtn')) return;
+  _markDirty();
   sbSchedule();
 });
 
