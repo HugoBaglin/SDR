@@ -2038,7 +2038,6 @@ function _getState(){
 
 let _savingAt=0;
 async function sbSave(){
-  // Débloquer si _saving est bloqué depuis plus de 5s
   if(_saving && Date.now()-_savingAt > 5000) _saving=false;
   if(_saving){
     clearTimeout(_saveTimer);
@@ -2061,12 +2060,11 @@ async function sbSave(){
         headers:{'Content-Type':'application/json','X-Access-Key':JBIN_ACCESS,'X-Master-Key':JBIN_MASTER,'X-Bin-Name':'sdr-reims','X-Bin-Private':'false'},
         body
       });
-      if(r.ok){
+      if(r&&r.ok){
         const d=await r.json();
         JBIN_ID=d.metadata.id;
         localStorage.setItem('sdr_bin_id',JBIN_ID);
-        _showToast('Sync initialisee ! ID: '+JBIN_ID);
-        _saving=false;_syncStatus('ok');return;
+        _saving=false;_syncStatus('ok');_markClean();return;
       }
     }
     if(r&&r.ok){
@@ -2075,17 +2073,15 @@ async function sbSave(){
       _markClean();
     } else {
       _syncStatus('error');
-      // Réessayer dans 3 secondes si erreur réseau
       clearTimeout(_saveTimer);
       _saveTimer=setTimeout(sbSave,3000);
     }
   }catch(e){
     _syncStatus('error');
-    // Réessayer dans 3 secondes si erreur réseau
     clearTimeout(_saveTimer);
     _saveTimer=setTimeout(sbSave,3000);
   }
-  _saving=false;
+  _saving=false; // TOUJOURS remettre à false
 }
 
 let _pendingSave=false;
@@ -2221,29 +2217,36 @@ document.addEventListener('change', function(e){
 });
 
 // ════ INIT ════
-// 1. Afficher l'app immediatement - jamais de page blanche
 try { _addSyncDot(); } catch(e){}
 try { renderFilterBtns(); } catch(e){}
 try { renderCards(); } catch(e){ document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>'; }
 try { showStartupAlert(); } catch(e){}
 
-// 2. Synchronisation en arriere-plan
+function _renderAll(){
+  try{ renderFilterBtns(); }catch(e){}
+  try{ renderCards(); }catch(e){}
+  try{ renderNumerotation(); }catch(e){}
+  try{ renderFlocage(); }catch(e){}
+  try{ renderAlertes(); }catch(e){}
+  try{ renderTableau(); }catch(e){}
+  try{ renderTodo(); }catch(e){}
+  try{ renderMatchPage(); }catch(e){}
+}
+
 setTimeout(async function(){
-  try {
-    _showToast('Chargement...');
+  try{
+    _syncStatus('saving');
+    _showToast('⏳ Chargement des données...');
     const loaded = await sbLoad();
     if(loaded){
-      renderFilterBtns();renderCards();
-      // Mettre à jour l'ID en dur dans l'affichage
-      _showToast('✅ Données chargées — ID: '+JBIN_ID);
+      _renderAll();
+      _showToast('✅ Données chargées');
     } else {
-      // Pas de données → première sauvegarde
       await sbSave();
-      _showToast('Première synchronisation...');
+      _showToast('✅ Première synchronisation OK');
     }
-  } catch(e) { _showToast('Hors-ligne'); }
-  setInterval(sbPoll, 8000);
-}, 100);
+  } catch(e){ _showToast('⚠️ Mode hors-ligne'); }
+}, 300);
 
 </script>
 </body>
