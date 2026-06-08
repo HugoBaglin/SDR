@@ -1422,11 +1422,11 @@ function renderNumerotation(){
 }
 function renderNumJ(cont,list,title){
   const cols=customColsJ;
-  const hdr=cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;width:100%;min-width:90px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px;line-height:1.4" value="'+c+'" title="Cliquer pour renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();sbSchedule()" onclick="this.select()"></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=[...list].sort((a,b)=>a.num-b.num).map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;sbSchedule()" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;sbSchedule()" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
@@ -1437,12 +1437,12 @@ function renderNumJ(cont,list,title){
 function renderNumTous(cont){
   const cols=customColsJ;
   const list=[...JOUEURS].sort((a,b)=>a.num-b.num);
-  const hdr=cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;width:100%;min-width:90px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px;line-height:1.4" value="'+c+'" title="Cliquer pour renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation()" onclick="this.select()"></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
     const bg=j.groupe==='Prêt'?'background:#f8fff8;':'';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;sbSchedule()" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;sbSchedule()" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="0"></td>';}).join('');
     return '<tr><td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')" >'+j.num+'</td><td style="cursor:pointer;white-space:nowrap" onclick="openJoueurEdit(\''+j.id+'\')" ><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'+cells+'</tr>';
   }).join('');
   cont.innerHTML='<div style="background:#f0fff4;border:2px solid #27ae60;border-radius:9px;padding:8px 13px;margin-bottom:13px;font-size:.73rem;font-weight:700;color:#155724">🌍 Vue consolidée — données en direct depuis les tableaux PRO, ELITE &amp; ESPOIR. <span class="nbp1">PRO</span> <span class="nbp2">ELITE</span> <span class="nbespoir">ESPOIR</span> <span class="nbpt">Prêt</span></div>'
@@ -1455,10 +1455,10 @@ function expTousXLSX(){
 }
 function renderNumS(cont,list,title){
   const cols=customColsS;
-  const hdr=cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;width:100%;min-width:90px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px;line-height:1.4" value="'+c+'" title="Cliquer pour renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();sbSchedule()" onclick="this.select()"></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(s){
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');sbSchedule()" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');sbSchedule()" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="font-family:\'Bebas Neue\',sans-serif;color:var(--r);cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')">'+s.initiales+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')"><span style="font-weight:800">'+s.nom+'</span></td>'
@@ -1470,8 +1470,32 @@ function updateStaff(id,col,v,titre){
   const l=titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
   const s=l.find(x=>x.id===id);if(s)s.tailles[col]=v;
 }
-function ajoutColJ(){const n=prompt('Nom de la nouvelle colonne :');if(n){customColsJ.push(n);renderNumerotation();sbSchedule();}}
-function ajoutColS(){const n=prompt('Nom de la nouvelle colonne :');if(n){customColsS.push(n);renderNumerotation();sbSchedule();}}
+function ajoutColJ(){
+  const n=prompt('Nom de la nouvelle colonne :');
+  if(!n||!n.trim())return;
+  customColsJ.push(n.trim());
+  renderNumerotation();
+  clearTimeout(_saveTimer);sbSave();
+}
+function ajoutColS(){
+  const n=prompt('Nom de la nouvelle colonne :');
+  if(!n||!n.trim())return;
+  customColsS.push(n.trim());
+  renderNumerotation();
+  clearTimeout(_saveTimer);sbSave();
+}
+function suppColJ(i){
+  if(!confirm('Supprimer la colonne "'+customColsJ[i]+'" ?\n⚠️ Les données saisies dans cette colonne seront perdues.'))return;
+  customColsJ.splice(i,1);
+  renderNumerotation();
+  clearTimeout(_saveTimer);sbSave();
+}
+function suppColS(i){
+  if(!confirm('Supprimer la colonne "'+customColsS[i]+'" ?\n⚠️ Les données saisies dans cette colonne seront perdues.'))return;
+  customColsS.splice(i,1);
+  renderNumerotation();
+  clearTimeout(_saveTimer);sbSave();
+}
 // ─── Joueur modal helpers ───
 function _buildColsGrid(gridId, cols, tailles, prefix){
   const grid=document.getElementById(gridId);
@@ -1553,7 +1577,8 @@ function saveJoueur(){
   }
   closeM('mJoueur');
   renderNumerotation();
-  sbSchedule();
+  clearTimeout(_saveTimer);
+  sbSave();
 }
 
 function deleteJoueur(){
@@ -1561,7 +1586,8 @@ function deleteJoueur(){
   JOUEURS=JOUEURS.filter(x=>x.id!==editingJoueurId);
   closeM('mJoueur');
   renderNumerotation();
-  sbSchedule();
+  clearTimeout(_saveTimer);
+  sbSave();
 }
 
 // ─── Staff modal helpers ───
@@ -1618,7 +1644,8 @@ function saveStaff(){
   }
   closeM('mStaff');
   renderNumerotation();
-  sbSchedule();
+  clearTimeout(_saveTimer);
+  sbSave();
 }
 
 function deleteStaff(){
@@ -1628,7 +1655,8 @@ function deleteStaff(){
   STAFF_ESPOIR=STAFF_ESPOIR.filter(x=>x.id!==editingStaffId);
   closeM('mStaff');
   renderNumerotation();
-  sbSchedule();
+  clearTimeout(_saveTimer);
+  sbSave();
 }
 
 // ════ FLOCAGE ════
@@ -2005,17 +2033,19 @@ function _syncStatus(s){
 }
 
 function _getState(){
-  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
+  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,customColsJ,customColsS,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
 }
 
+let _savingAt=0;
 async function sbSave(){
+  // Débloquer si _saving est bloqué depuis plus de 5s
+  if(_saving && Date.now()-_savingAt > 5000) _saving=false;
   if(_saving){
-    // Si une sauvegarde est en cours, replanifier dans 800ms
     clearTimeout(_saveTimer);
     _saveTimer=setTimeout(sbSave,800);
     return;
   }
-  _saving=true;_syncStatus('saving');
+  _saving=true; _savingAt=Date.now(); _syncStatus('saving');
   try{
     const body=JSON.stringify(_getState());
     let r;
@@ -2126,7 +2156,9 @@ async function sbLoad(){
     if(s.STAFF_PRO1) STAFF_PRO1 =s.STAFF_PRO1;
     if(s.STAFF_PRO2) STAFF_PRO2 =s.STAFF_PRO2;
     if(s.STAFF_ESPOIR) STAFF_ESPOIR=s.STAFF_ESPOIR;
-    if(s.CAT) CAT=s.CAT;
+    if(s.CAT)          CAT=s.CAT;
+    if(s.customColsJ)  customColsJ=s.customColsJ;
+    if(s.customColsS)  customColsS=s.customColsS;
     if(s.MATCHS)     MATCHS     =s.MATCHS;
     if(s.TODOS)      TODOS      =s.TODOS;
     if(s.HISTORIQUE) HISTORIQUE =s.HISTORIQUE;
