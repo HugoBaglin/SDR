@@ -1015,23 +1015,7 @@ function goBack(){
   }
 }
 
-async function manuSave(){
-  const btn=document.getElementById('saveBtnIcon');
-  btn.textContent='⏳';
-  clearTimeout(_saveTimer); // Annuler le timer auto
-  try{
-    _saving=false; // Forcer même si une save était en cours
-    await sbSave();
-    btn.textContent='✅';
-    _markClean();
-    _showToast('✅ Données enregistrées !');
-    setTimeout(()=>{btn.textContent='💾';},3000);
-  }catch(e){
-    btn.textContent='❌';
-    _showToast('❌ Erreur enregistrement');
-    setTimeout(()=>btn.textContent='💾',2000);
-  }
-}
+
 
 function goPage(pid){
   const tab=document.querySelector('.nt[data-page="'+pid+'"]');
@@ -2000,15 +1984,16 @@ function showStartupAlert(){
   openM('mStartup');
 }
 
-// ════ JSONBIN SYNC ════
+// ════ SYNC — localStorage (principal) + JSONBin (backup) ════
 const JBIN_ACCESS = '$2a$10$TrOcg3kWnwSBrkVDJKFuE.mZHtDNhRbHh.rI/x5ZTxY6XJ67tpGd6';
 const JBIN_MASTER = '$2a$10$/pLXUSkPWImBGzVeEb5Cte2oqm8cNvKisGdue1VGf0d0RkFa93bPe';
-const JBIN_NAME   = 'sdr-reims';
-// ID stocké en dur + localStorage comme backup
-let JBIN_ID = '6a1edd52f5f4af5e29ad346f' || localStorage.getItem('sdr_bin_id') || null;
-let _saveTimer = null;
-let _lastTs = 0;
-let _saving = false;
+const JBIN_ID     = '6a1edd52f5f4af5e29ad346f';
+const LS_KEY      = 'sdr_data_v2';
+
+let _saveTimer  = null;
+let _saving     = false;
+let _savingAt   = 0;
+let _pendingSave= false;
 
 function _showToast(msg){
   let t=document.getElementById('sbToast');
@@ -2016,181 +2001,166 @@ function _showToast(msg){
   t.style.cssText='position:fixed;bottom:80px;right:18px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.78rem;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;max-width:280px;box-shadow:0 4px 16px rgba(0,0,0,.3)';
   document.body.appendChild(t);}
   t.textContent=msg;t.style.opacity='1';
-  clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.opacity='0',3000);
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.opacity='0',3500);
 }
 
 function _addSyncDot(){
   const hi=document.querySelector('.hi');
   if(!hi||document.getElementById('syncDot'))return;
   const d=document.createElement('div');d.id='syncDot';
-  d.style.cssText='width:11px;height:11px;border-radius:50%;background:#aaa;flex-shrink:0;margin-left:4px;transition:background .3s';
+  d.style.cssText='width:11px;height:11px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .3s';
   d.title='Synchronisation';hi.appendChild(d);
 }
 function _syncStatus(s){
   const d=document.getElementById('syncDot');if(!d)return;
-  d.style.background={ok:'#27ae60',saving:'#e67e22',error:'#c0392b',off:'#aaa'}[s]||'#aaa';
-  d.title={ok:'Synchronise',saving:'Sauvegarde...',error:'Erreur reseau',off:'Hors ligne'}[s]||'';
+  d.style.background={ok:'#27ae60',saving:'#e67e22',error:'#e67e22',off:'#aaa'}[s]||'#aaa';
+}
+function _markDirty(){
+  _pendingSave=true;
+  const btn=document.getElementById('saveBtnIcon');
+  if(btn&&btn.textContent==='💾')btn.textContent='💾*';
+}
+function _markClean(){
+  _pendingSave=false;
+  const btn=document.getElementById('saveBtnIcon');
+  if(btn)btn.textContent='💾';
 }
 
 function _getState(){
   return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,customColsJ,customColsS,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
 }
 
-let _savingAt=0;
-async function sbSave(){
-  if(_saving && Date.now()-_savingAt > 5000) _saving=false;
-  if(_saving){
-    clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(sbSave,800);
-    return;
-  }
+function _applyState(s){
+  if(!s||!s.DATA)return false;
+  if(s.DATA)        DATA        =s.DATA;
+  if(s.FLOCAGE)     FLOCAGE     =s.FLOCAGE;
+  if(s.JOUEURS)     JOUEURS     =s.JOUEURS;
+  if(s.STAFF_PRO1)  STAFF_PRO1  =s.STAFF_PRO1;
+  if(s.STAFF_PRO2)  STAFF_PRO2  =s.STAFF_PRO2;
+  if(s.STAFF_ESPOIR)STAFF_ESPOIR=s.STAFF_ESPOIR;
+  if(s.CAT)         CAT         =s.CAT;
+  if(s.customColsJ) customColsJ =s.customColsJ;
+  if(s.customColsS) customColsS =s.customColsS;
+  if(s.MATCHS)      MATCHS      =s.MATCHS;
+  if(s.TODOS)       TODOS       =s.TODOS;
+  if(s.HISTORIQUE)  HISTORIQUE  =s.HISTORIQUE;
+  return true;
+}
+
+// ── SAUVEGARDE LOCALE (instantanée, toujours disponible) ──
+function _lsSave(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(_getState()));
+    return true;
+  }catch(e){return false;}
+}
+
+function _lsLoad(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return false;
+    const s=JSON.parse(raw);
+    return _applyState(s);
+  }catch(e){return false;}
+}
+
+// ── SAUVEGARDE JSONBIN (async, backup cloud) ──
+async function _jbSave(){
+  if(_saving && Date.now()-_savingAt>8000) _saving=false;
+  if(_saving)return;
   _saving=true; _savingAt=Date.now(); _syncStatus('saving');
   try{
-    const body=JSON.stringify(_getState());
-    let r;
-    if(JBIN_ID){
-      r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json','X-Access-Key':JBIN_ACCESS},
-        body
-      });
-    } else {
-      r=await fetch('https://api.jsonbin.io/v3/b',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-Access-Key':JBIN_ACCESS,'X-Master-Key':JBIN_MASTER,'X-Bin-Name':'sdr-reims','X-Bin-Private':'false'},
-        body
-      });
-      if(r&&r.ok){
-        const d=await r.json();
-        JBIN_ID=d.metadata.id;
-        localStorage.setItem('sdr_bin_id',JBIN_ID);
-        _saving=false;_syncStatus('ok');_markClean();return;
-      }
-    }
-    if(r&&r.ok){
-      _syncStatus('ok');
-      _lastTs=Date.now();
-      _markClean();
-    } else {
-      _syncStatus('error');
-      clearTimeout(_saveTimer);
-      _saveTimer=setTimeout(sbSave,3000);
-    }
-  }catch(e){
-    _syncStatus('error');
-    clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(sbSave,3000);
-  }
-  _saving=false; // TOUJOURS remettre à false
+    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Access-Key':JBIN_ACCESS},
+      body:JSON.stringify(_getState())
+    });
+    _syncStatus(r.ok?'ok':'error');
+    if(r.ok)_markClean();
+  }catch(e){_syncStatus('error');}
+  _saving=false;
 }
 
-let _pendingSave=false;
+async function _jbLoad(){
+  try{
+    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{
+      headers:{'X-Access-Key':JBIN_ACCESS}
+    });
+    if(!r.ok)return false;
+    const d=await r.json();
+    return _applyState(d.record);
+  }catch(e){return false;}
+}
+
+// ── API PUBLIQUE ──
+async function sbSave(){
+  // 1. Sauvegarde locale immédiate (ne peut pas échouer)
+  _lsSave();
+  _markClean();
+  _syncStatus('saving');
+  // 2. Backup cloud en arrière-plan
+  await _jbSave();
+}
+
 function sbSchedule(){
   _markDirty();
+  // Sauvegarde locale immédiate
+  _lsSave();
+  // Cloud avec délai court
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(sbSave,500);
+  _saveTimer=setTimeout(_jbSave, 1500);
 }
-
-// ════ SAUVEGARDE FORCÉE À LA FERMETURE ════
-window.addEventListener('beforeunload',function(){
-  if(_pendingSave){
-    // Sauvegarde synchrone (keepalive) pour ne rien perdre à la fermeture
-    try{
-      const body=JSON.stringify(_getState());
-      navigator.sendBeacon&&navigator.sendBeacon(
-        'https://api.jsonbin.io/v3/b/'+JBIN_ID+'?accessKey='+encodeURIComponent(JBIN_ACCESS),
-        new Blob([body],{type:'application/json'})
-      );
-    }catch(e){}
-  }
-});
-
-// ════ INDICATEUR VISUEL de modifications non sauvegardées ════
-function _markDirty(){
-  _pendingSave=true;
-  const btn=document.getElementById('saveBtnIcon');
-  if(btn&&btn.textContent==='💾') btn.textContent='💾*';
-}
-function _markClean(){
-  _pendingSave=false;
-  const btn=document.getElementById('saveBtnIcon');
-  if(btn) btn.textContent='💾';
-}
-
 
 async function sbLoad(){
-  // Si pas d'ID, chercher le bin par nom
-  if(!JBIN_ID){
-    try{
-      const r=await fetch('https://api.jsonbin.io/v3/b?page=1',{
-        headers:{'X-Master-Key':JBIN_MASTER,'X-Access-Key':JBIN_ACCESS}
-      });
-      if(r.ok){
-        const d=await r.json();
-        const bins=d.result||[];
-        const found=bins.find(b=>b.snippetMeta&&b.snippetMeta.name===JBIN_NAME);
-        if(found){
-          JBIN_ID=found.snippetMeta.id;
-          localStorage.setItem('sdr_bin_id',JBIN_ID);
-        }
-      }
-    }catch(e){}
+  // 1. Essayer JSONBin d'abord (données les plus récentes)
+  const jbOk = await _jbLoad();
+  if(jbOk){
+    // Mettre à jour le localStorage avec les données du cloud
+    _lsSave();
+    _syncStatus('ok');
+    return true;
   }
-  if(!JBIN_ID){_syncStatus('off');return false;}
-  _syncStatus('saving');
-  try{
-    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{
-      headers:{'X-Access-Key':JBIN_ACCESS}
-    });
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();
-    const s=d.record;
-    if(!s||!s.DATA){_syncStatus('off');return false;}
-    if(s.DATA)       DATA       =s.DATA;
-    if(s.FLOCAGE)    FLOCAGE    =s.FLOCAGE;
-    if(s.JOUEURS)    JOUEURS    =s.JOUEURS;
-    if(s.STAFF_PRO1) STAFF_PRO1 =s.STAFF_PRO1;
-    if(s.STAFF_PRO2) STAFF_PRO2 =s.STAFF_PRO2;
-    if(s.STAFF_ESPOIR) STAFF_ESPOIR=s.STAFF_ESPOIR;
-    if(s.CAT)          CAT=s.CAT;
-    if(s.customColsJ)  customColsJ=s.customColsJ;
-    if(s.customColsS)  customColsS=s.customColsS;
-    if(s.MATCHS)     MATCHS     =s.MATCHS;
-    if(s.TODOS)      TODOS      =s.TODOS;
-    if(s.HISTORIQUE) HISTORIQUE =s.HISTORIQUE;
-    _lastTs=s.ts||Date.now();
-    _syncStatus('ok');return true;
-  }catch(e){_syncStatus('error');return false;}
+  // 2. Fallback sur localStorage si JSONBin échoue
+  const lsOk = _lsLoad();
+  if(lsOk){
+    _syncStatus('ok');
+    _showToast('⚠️ Mode local — données du localStorage');
+    return true;
+  }
+  _syncStatus('off');
+  return false;
 }
 
-async function sbPoll(){
-  if(!JBIN_ID)return;
+async function manuSave(){
+  const btn=document.getElementById('saveBtnIcon');
+  btn.textContent='⏳';
+  _lsSave(); // Sauvegarde locale instantanée
   try{
-    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{
-      headers:{'X-Access-Key':JBIN_ACCESS}
-    });
-    if(!r.ok)return;
-    const d=await r.json();
-    const s=d.record;
-    if(!s||!s.ts)return;
-    if(s.ts>_lastTs+3000){
-      const loaded=await sbLoad();
-      if(loaded){
-        const active=document.querySelector('.page.active');
-        if(active){
-          const pid=active.id.replace('page-','');
-          if(pid==='inventaire')renderCards();
-          else if(pid==='tableau')renderTableau();
-          else if(pid==='alertes')renderAlertes();
-          else if(pid==='flocage')renderFlocage();
-          else if(pid==='match')renderMatchPage();
-          else if(pid==='numerotation')renderNumerotation();
-          else if(pid==='todo')renderTodo();
-        }
-        _showToast('Donnees mises a jour par votre collegue');
-      }
-    }
-  }catch(e){}
+    _saving=false;
+    await _jbSave();
+    btn.textContent='✅';
+    setTimeout(()=>btn.textContent='💾',3000);
+    _showToast('✅ Données enregistrées !');
+  }catch(e){
+    btn.textContent='❌';
+    setTimeout(()=>btn.textContent='💾',2000);
+  }
+}
+
+// Sauvegarde à la fermeture
+window.addEventListener('beforeunload',function(){
+  _lsSave(); // localStorage toujours disponible à la fermeture
+});
+
+function _renderAll(){
+  try{renderFilterBtns();}catch(e){}
+  try{renderCards();}catch(e){}
+  try{renderNumerotation();}catch(e){}
+  try{renderFlocage();}catch(e){}
+  try{renderAlertes();}catch(e){}
+  try{renderTableau();}catch(e){}
+  try{renderTodo();}catch(e){}
+  try{renderMatchPage();}catch(e){}
 }
 
 (function(){
@@ -2199,53 +2169,41 @@ async function sbPoll(){
     'saveStaff','deleteStaff','saveMatch','deleteMatch','cycleCell',
     'updMCom','setRes','updMHead','saveTodo','deleteTodo','toggleTodo','toggleVu',
     'toggleGroupMatchSel','selectAllMatch','clearMatchSel','editSeuil',
-    'validerSelection','removePhoto','ajoutColJ','ajoutColS'];
+    'validerSelection','removePhoto','ajoutColJ','ajoutColS','suppColJ','suppColS'];
   fns.forEach(name=>{
     if(typeof window[name]==='function'){
       const orig=window[name];
-      window[name]=function(...args){const r=orig.apply(this,args);sbSchedule();return r;};
+      window[name]=function(...args){
+        const r=orig.apply(this,args);
+        sbSchedule();
+        return r;
+      };
     }
   });
 })();
 
-// ════ FILET DE SÉCURITÉ — sauvegarde sur tout changement de champ ════
-document.addEventListener('change', function(e){
+document.addEventListener('change',function(e){
   const t=e.target;
-  if(t.id==='searchInput'||t.classList.contains('fbtn')) return;
-  _markDirty();
+  if(t.id==='searchInput'||t.classList.contains('fbtn'))return;
   sbSchedule();
 });
 
 // ════ INIT ════
-try { _addSyncDot(); } catch(e){}
-try { renderFilterBtns(); } catch(e){}
-try { renderCards(); } catch(e){ document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>'; }
-try { showStartupAlert(); } catch(e){}
-
-function _renderAll(){
-  try{ renderFilterBtns(); }catch(e){}
-  try{ renderCards(); }catch(e){}
-  try{ renderNumerotation(); }catch(e){}
-  try{ renderFlocage(); }catch(e){}
-  try{ renderAlertes(); }catch(e){}
-  try{ renderTableau(); }catch(e){}
-  try{ renderTodo(); }catch(e){}
-  try{ renderMatchPage(); }catch(e){}
-}
+try{_addSyncDot();}catch(e){}
+try{renderFilterBtns();}catch(e){}
+try{renderCards();}catch(e){document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>';}
+try{showStartupAlert();}catch(e){}
 
 setTimeout(async function(){
-  try{
-    _syncStatus('saving');
-    _showToast('⏳ Chargement des données...');
-    const loaded = await sbLoad();
-    if(loaded){
-      _renderAll();
-      _showToast('✅ Données chargées');
-    } else {
-      await sbSave();
-      _showToast('✅ Première synchronisation OK');
-    }
-  } catch(e){ _showToast('⚠️ Mode hors-ligne'); }
+  _showToast('⏳ Chargement...');
+  const ok = await sbLoad();
+  if(ok){
+    _renderAll();
+    _showToast('✅ Données chargées');
+  } else {
+    _showToast('⚠️ Aucune donnée trouvée — mode initial');
+    await sbSave();
+  }
 }, 300);
 
 </script>
