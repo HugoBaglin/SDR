@@ -1452,7 +1452,7 @@ function renderNumJ(cont,list,title){
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=[...list].sort((a,b)=>a.num-b.num).map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px'+(typeof bg!=='undefined'?';'+bg:'')+'" ><input class="nce njcell" data-jid="'+j.id+'" data-col="'+c+'" value="'+(j.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px'+(typeof bg!=='undefined'?';'+bg:'')+'" ><input class="nce nb njcell" data-jid="'+j.id+'" data-col="'+c+'_nb" value="'+(j.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
@@ -1468,7 +1468,7 @@ function renderNumTous(cont){
   const rows=list.map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
     const bg=j.groupe==='Prêt'?'background:#f8fff8;':'';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce njcell" data-jid="'+j.id+'" data-col="'+c+'" value="'+(j.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb njcell" data-jid="'+j.id+'" data-col="'+c+'_nb" value="'+(j.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
     return '<tr><td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')" >'+j.num+'</td><td style="cursor:pointer;white-space:nowrap" onclick="openJoueurEdit(\''+j.id+'\')" ><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'+cells+'</tr>';
   }).join('');
   cont.innerHTML='<div style="background:#f0fff4;border:2px solid #27ae60;border-radius:9px;padding:8px 13px;margin-bottom:13px;font-size:.73rem;font-weight:700;color:#155724">🌍 Vue consolidée — données en direct depuis les tableaux PRO, ELITE &amp; ESPOIR. <span class="nbp1">PRO</span> <span class="nbp2">ELITE</span> <span class="nbespoir">ESPOIR</span> <span class="nbpt">Prêt</span></div>'
@@ -1484,13 +1484,18 @@ function renderNumS(cont,list,title){
   const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(s){
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce nscell" data-sid="'+s.id+'" data-col="'+c+'" data-titre="'+title+'" value="'+(s.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb nscell" data-sid="'+s.id+'" data-col="'+c+'_nb" data-titre="'+title+'" value="'+(s.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="font-family:\'Bebas Neue\',sans-serif;color:var(--r);cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')">'+s.initiales+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')"><span style="font-weight:800">'+s.nom+'</span></td>'
     +cells+'</tr>';
   }).join('');
   cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">👔 Staff '+title+'</span><div style="display:flex;gap:6px"><button class="btn btn-or btn-sm" onclick="ajoutStaff(\''+title+'\')">➕</button><button class="btn btn-g btn-sm" onclick="ajoutColS()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expNumXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr><th rowspan="2" style="vertical-align:middle">Init.</th><th rowspan="2" style="vertical-align:middle">Nom</th>'+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
+function setJTaille(id,col,val){
+  const j=JOUEURS.find(x=>String(x.id)===String(id));
+  if(j){j.tailles[col]=val;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);}
+  else{console.warn('Joueur non trouvé:',id);}
 }
 function updateStaff(id,col,v,titre){
   const l=titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
@@ -2194,9 +2199,41 @@ function _renderAll(){
   });
 })();
 
-// Filet de sécurité global sur tout changement de champ
-document.addEventListener('change',function(e){
-  const t=e.target;
+// ── Délégation d'événements pour les cellules numérotation ──
+document.addEventListener('change', function(e){
+  const t = e.target;
+
+  // Cellule joueur (njcell)
+  if(t.classList.contains('njcell')){
+    const jid = t.dataset.jid;
+    const col = t.dataset.col;
+    const j = JOUEURS.find(x => String(x.id) === String(jid));
+    if(j){
+      j.tailles[col] = t.value;
+      _lsSave();
+      clearTimeout(_jbTimer);
+      _jbTimer = setTimeout(_jbSave, 2000);
+    }
+    return;
+  }
+
+  // Cellule staff (nscell)
+  if(t.classList.contains('nscell')){
+    const sid   = t.dataset.sid;
+    const col   = t.dataset.col;
+    const titre = t.dataset.titre;
+    const l = titre==='PRO 1'?STAFF_PRO1 : titre==='PRO 2'?STAFF_PRO2 : STAFF_ESPOIR;
+    const s = l.find(x => String(x.id) === String(sid));
+    if(s){
+      s.tailles[col] = t.value;
+      _lsSave();
+      clearTimeout(_jbTimer);
+      _jbTimer = setTimeout(_jbSave, 2000);
+    }
+    return;
+  }
+
+  // Tous les autres champs — filet de sécurité
   if(t.id==='searchInput'||t.classList.contains('fbtn')||t.classList.contains('ms'))return;
   sbSchedule();
 });
