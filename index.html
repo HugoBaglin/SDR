@@ -203,7 +203,51 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
 .tday-add{position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:var(--r);color:#fff;border:none;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;line-height:1}
 .tday-wrap:hover .tday-add{opacity:1}
 @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:700px){.cg{grid-template-columns:1fr}.hs{gap:6px}.hs-i{min-width:52px;padding:5px 8px}.frow{grid-template-columns:1fr}}
+/* ═══ RESPONSIVE MOBILE ═══ */
+@media(max-width:768px){
+  .hi{padding:8px 12px;gap:8px;flex-wrap:wrap}
+  .logo{height:40px}
+  .ht h1{font-size:1.2rem}
+  .ht p{font-size:.55rem}
+  .hs{gap:4px;flex-wrap:wrap}
+  .hs-i{min-width:44px;padding:4px 6px}
+  .hs-n{font-size:1.1rem}
+  .hs-l{font-size:.48rem}
+  .nt{padding:8px 11px;font-size:.6rem}
+  main{padding:10px 8px}
+  .cg{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr}
+  .card{border-radius:10px}
+  .tg.textile{grid-template-columns:repeat(3,1fr)}
+  .tg.chaussure{grid-template-columns:repeat(4,1fr)}
+  .modal{padding:15px;max-height:95vh}
+  .ntbl{font-size:.65rem}
+  .nce{font-size:.65rem}
+  .btn{padding:6px 10px;font-size:.65rem}
+  .btn-sm{padding:4px 8px;font-size:.58rem}
+  .nsb{padding:5px 10px;font-size:.62rem}
+  .num-sub{gap:5px}
+  .fc-digits{grid-template-columns:repeat(5,1fr)}
+  .mtbl{font-size:.68rem}
+  .si{min-width:120px;font-size:.72rem}
+  .fbtn{font-size:.62rem;padding:4px 9px}
+  .pop{min-width:100px}
+  .stitle{font-size:1.1rem}
+  .fab{width:46px;height:46px;font-size:1.6rem;bottom:16px;right:16px}
+  .mc{flex-direction:column;gap:6px}
+  .ms{width:100%}
+  table{font-size:.68rem}
+  thead th{padding:5px 6px;font-size:.55rem}
+  tbody td{padding:5px 6px}
+}
+@media(max-width:420px){
+  .hs-i{min-width:38px;padding:3px 5px}
+  .hs-n{font-size:.95rem}
+  .hs-l{display:none}
+  .tg.textile{grid-template-columns:repeat(3,1fr)}
+  .cg{grid-template-columns:1fr}
+  .ntbl{font-size:.6rem}
+}
 
 @media print {
   header,nav,.fab,.hs-i[onclick*="mExport"],.btn,button:not(.print-ok),.num-sub,.fbar,#fabBtn,.overlay{display:none!important}
@@ -2035,10 +2079,26 @@ function showStartupAlert(){
   openM('mStartup');
 }
 
-// ════════════════════════════════════════════════════════
-//  SAUVEGARDE — localStorage uniquement (simple et fiable)
-// ════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+//  SAUVEGARDE — GitHub API (données dans le fichier lui-même)
+//  Fallback : localStorage pour usage hors-ligne
+// ═══════════════════════════════════════════════════════════
+
+// ── Config GitHub ──
+const GH = {
+  owner : 'HugoBaglin',
+  repo  : 'SDR',
+  file  : 'index.html',
+  branch: 'main',
+  // Token GitHub avec droit "repo" (Contents read/write)
+  // Générer sur github.com → Settings → Developer settings → Personal access tokens
+  token : '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'
+};
+
 const _LS_KEY = 'sdr_reims_v1';
+let   _ghSha  = '';   // SHA du fichier sur GitHub (nécessaire pour PUT)
+let   _saving = false;
+let   _saveQ  = false; // sauvegarde en attente
 
 // ── Toast ──
 function _showToast(msg, dur){
@@ -2081,10 +2141,9 @@ function _getState(){
     STAFF_PRO1:STAFF_PRO1, STAFF_PRO2:STAFF_PRO2, STAFF_ESPOIR:STAFF_ESPOIR,
     CAT:CAT, customColsJ:customColsJ, customColsS:customColsS,
     MATCHS:MATCHS, TODOS:TODOS, HISTORIQUE:HISTORIQUE,
-    ts:Date.now()
+    ts: Date.now()
   };
 }
-
 function _applyState(s){
   if(!s || !s.DATA) return false;
   DATA         = s.DATA;
@@ -2102,24 +2161,13 @@ function _applyState(s){
   return true;
 }
 
-// ── Sauvegarde localStorage ──
-function _save(){
-  try{
-    localStorage.setItem(_LS_KEY, JSON.stringify(_getState()));
-    _dot('ok');
-    _btnIcon('💾');
-    return true;
-  } catch(e){
-    console.error('Save error:', e);
-    _dot('err');
-    return false;
-  }
+// ── localStorage (toujours disponible, sauvegarde immédiate) ──
+function _lsSave(){
+  try{ localStorage.setItem(_LS_KEY, JSON.stringify(_getState())); return true; }
+  catch(e){ return false; }
 }
-
-// ── Chargement localStorage ──
-function _load(){
-  // Essayer la clé principale
-  var keys = [_LS_KEY, 'sdr_v3', 'sdr_data_v2', 'sdr_data_v1'];
+function _lsLoad(){
+  var keys = [_LS_KEY,'sdr_v3','sdr_data_v2'];
   for(var i=0; i<keys.length; i++){
     try{
       var raw = localStorage.getItem(keys[i]);
@@ -2127,7 +2175,6 @@ function _load(){
       var s = JSON.parse(raw);
       if(s && s.JOUEURS && s.JOUEURS.length > 0){
         _applyState(s);
-        // Migrer vers la clé principale
         if(keys[i] !== _LS_KEY) localStorage.setItem(_LS_KEY, raw);
         return true;
       }
@@ -2136,94 +2183,155 @@ function _load(){
   return false;
 }
 
+// ── GitHub API — injecter les données dans le fichier HTML ──
+async function _ghSave(){
+  if(!GH.token){ _dot('off'); return false; }
+  if(_saving){ _saveQ=true; return false; }
+  _saving = true;
+  _dot('saving');
+
+  try{
+    // 1. Récupérer le fichier actuel (pour avoir le SHA)
+    const getR = await fetch(
+      'https://api.github.com/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.file+'?ref='+GH.branch,
+      { headers: { 'Authorization':'token '+GH.token, 'Accept':'application/vnd.github.v3+json' } }
+    );
+    if(!getR.ok) throw new Error('GitHub GET: '+getR.status);
+    const getD = await getR.json();
+    _ghSha = getD.sha;
+
+    // 2. Décoder le contenu actuel (base64)
+    const currentHtml = decodeURIComponent(escape(atob(getD.content.replace(/\n/g,''))));
+
+    // 3. Injecter les données dans le fichier
+    const stateJson = JSON.stringify(_getState());
+    const marker1 = '/* __SDR_DATA_START__ */';
+    const marker2 = '/* __SDR_DATA_END__ */';
+    let newHtml;
+    if(currentHtml.includes(marker1)){
+      // Remplacer les données existantes
+      const before = currentHtml.substring(0, currentHtml.indexOf(marker1)+marker1.length);
+      const after  = currentHtml.substring(currentHtml.indexOf(marker2));
+      newHtml = before + '\nconst _SAVED_STATE=' + stateJson + ';\n' + after;
+    } else {
+      // Premiere fois : injecter les donnees
+      const closeTag = '<\/script>';
+      newHtml = currentHtml.replace(closeTag+'\n<\/body>', '/* __SDR_DATA_START__ */\nconst _SAVED_STATE='+stateJson+';\n/* __SDR_DATA_END__ */\n'+closeTag+'\n<\/body>');
+    }
+
+    // 4. Encoder en base64 et envoyer
+    const encoded = btoa(unescape(encodeURIComponent(newHtml)));
+    const putR = await fetch(
+      'https://api.github.com/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.file,
+      {
+        method : 'PUT',
+        headers: { 'Authorization':'token '+GH.token, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
+        body   : JSON.stringify({ message:'SDR: sauvegarde données '+new Date().toLocaleString('fr-FR'), content:encoded, sha:_ghSha, branch:GH.branch })
+      }
+    );
+    if(!putR.ok) throw new Error('GitHub PUT: '+putR.status);
+    _ghSha = (await putR.json()).content.sha;
+    _dot('ok'); _saving=false;
+    if(_saveQ){ _saveQ=false; setTimeout(_ghSave,500); }
+    return true;
+  } catch(e){
+    console.error('GitHub save error:', e);
+    _dot('err'); _saving=false;
+    return false;
+  }
+}
+
 // ── API publique ──
 var _saveTimer = null;
 
 function sbSchedule(){
-  _dot('saving');
+  // 1. localStorage immédiat (toujours)
+  _lsSave();
   _btnIcon('💾*');
-  // Sauvegarde immédiate (pas de délai)
-  _save();
+  // 2. GitHub différé (2s après dernière modif)
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(function(){
+    _ghSave().then(function(ok){
+      if(ok){ _btnIcon('💾'); _showToast('✅ Sauvegardé sur GitHub'); }
+      else  { _btnIcon('💾'); } // localStorage toujours OK
+    });
+  }, 2000);
 }
 
 function sbSave(){
-  return _save();
+  _lsSave();
+  _btnIcon('💾');
+  return true;
 }
 
 async function manuSave(){
   _btnIcon('⏳');
-  var ok = _save();
-  if(ok){
-    _btnIcon('✅');
-    _showToast('✅ Données enregistrées !');
-    setTimeout(function(){ _btnIcon('💾'); }, 2500);
+  _lsSave();
+  if(GH.token){
+    const ok = await _ghSave();
+    if(ok){
+      _btnIcon('✅');
+      _showToast('✅ Données sauvegardées sur GitHub !');
+    } else {
+      _btnIcon('💾');
+      _showToast('⚠️ Sauvegardé localement (GitHub indisponible)');
+    }
   } else {
-    _btnIcon('❌');
-    setTimeout(function(){ _btnIcon('💾'); }, 2000);
+    _btnIcon('💾');
+    _showToast('💾 Sauvegardé localement — configurer GitHub pour la persistance');
   }
+  setTimeout(function(){ _btnIcon('💾'); }, 3000);
 }
 
-// Sauvegarde à la fermeture
-window.addEventListener('beforeunload', function(){ _save(); });
-window.addEventListener('pagehide',     function(){ _save(); });
+// Sauvegarde locale à la fermeture
+window.addEventListener('beforeunload', function(){ _lsSave(); });
+window.addEventListener('pagehide',     function(){ _lsSave(); });
 window.addEventListener('visibilitychange', function(){
-  if(document.visibilityState === 'hidden') _save();
+  if(document.visibilityState === 'hidden') _lsSave();
 });
 
 // ── Render tout ──
 function _renderAll(){
-  try{ renderFilterBtns(); }  catch(e){}
-  try{ renderCards(); }       catch(e){}
-  try{ renderNumerotation(); }catch(e){}
-  try{ renderFlocage(); }     catch(e){}
-  try{ renderAlertes(); }     catch(e){}
-  try{ renderTableau(); }     catch(e){}
-  try{ renderTodo(); }        catch(e){}
-  try{ renderMatchPage(); }   catch(e){}
+  try{ renderFilterBtns(); }  catch(e){ console.error(e); }
+  try{ renderCards(); }       catch(e){ console.error(e); }
+  try{ renderNumerotation(); }catch(e){ console.error(e); }
+  try{ renderFlocage(); }     catch(e){ console.error(e); }
+  try{ renderAlertes(); }     catch(e){ console.error(e); }
+  try{ renderTableau(); }     catch(e){ console.error(e); }
+  try{ renderTodo(); }        catch(e){ console.error(e); }
+  try{ renderMatchPage(); }   catch(e){ console.error(e); }
 }
 
-// ── Écouteur pour cellules numérotation (data-attributes) ──
+// ── Écouteur cellules numérotation ──
 document.addEventListener('change', function(e){
   var t = e.target;
 
   if(t.classList.contains('njcell')){
-    var jid = t.dataset.jid;
-    var col = t.dataset.col;
-    var j = null;
+    var jid = t.dataset.jid, col = t.dataset.col;
     for(var k=0; k<JOUEURS.length; k++){
-      if(String(JOUEURS[k].id) === String(jid)){ j = JOUEURS[k]; break; }
+      if(String(JOUEURS[k].id)===String(jid)){ JOUEURS[k].tailles[col]=t.value; break; }
     }
-    if(j){
-      j.tailles[col] = t.value;
-      _save();
-    }
+    sbSchedule();
     return;
   }
 
   if(t.classList.contains('nscell')){
-    var sid   = t.dataset.sid;
-    var col2  = t.dataset.col;
-    var titre = t.dataset.titre;
-    var lst   = titre==='PRO 1' ? STAFF_PRO1 : titre==='PRO 2' ? STAFF_PRO2 : STAFF_ESPOIR;
-    var s = null;
+    var sid=t.dataset.sid, col2=t.dataset.col, titre=t.dataset.titre;
+    var lst = titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
     for(var m=0; m<lst.length; m++){
-      if(String(lst[m].id) === String(sid)){ s = lst[m]; break; }
+      if(String(lst[m].id)===String(sid)){ lst[m].tailles[col2]=t.value; break; }
     }
-    if(s){
-      s.tailles[col2] = t.value;
-      _save();
-    }
+    sbSchedule();
     return;
   }
 
-  // Tous les autres champs
-  if(t.id === 'searchInput' || t.classList.contains('fbtn') || t.classList.contains('ms')) return;
+  if(t.id==='searchInput'||t.classList.contains('fbtn')||t.classList.contains('ms')) return;
   sbSchedule();
 });
 
-// ── Patch auto-save sur les fonctions de modification ──
+// ── Patch auto-save ──
 (function(){
-  var fns = [
+  var fns=[
     'creerArticle','saveStock','confirmDelete','saveAttrib',
     'creerFlocage','saveFlocEdit','deleteFlocage','saveFlocAttrib',
     'saveJoueur','deleteJoueur','saveStaff','deleteStaff',
@@ -2234,13 +2342,9 @@ document.addEventListener('change', function(e){
     'suppColJ','suppColS','renameCat','addCat','deleteCat'
   ];
   fns.forEach(function(name){
-    if(typeof window[name] === 'function'){
-      var orig = window[name];
-      window[name] = function(){
-        var r = orig.apply(this, arguments);
-        _save();
-        return r;
-      };
+    if(typeof window[name]==='function'){
+      var orig=window[name];
+      window[name]=function(){ var r=orig.apply(this,arguments); sbSchedule(); return r; };
     }
   });
 })();
@@ -2252,17 +2356,27 @@ try{ renderCards(); }catch(e){ document.body.innerHTML='<h2 style="padding:20px;
 try{ showStartupAlert(); }catch(e){}
 
 (function(){
-  var ok = _load();
-  if(ok){
-    _renderAll();
-    _save(); // Migrer vers clé principale si nécessaire
-    _showToast('✅ Données chargées — ' + JOUEURS.length + ' joueurs, ' + DATA.length + ' articles');
+  // Charger depuis _SAVED_STATE (données dans le fichier) ou localStorage
+  var loaded = false;
+  if(typeof _SAVED_STATE !== 'undefined' && _SAVED_STATE && _SAVED_STATE.JOUEURS && _SAVED_STATE.JOUEURS.length > 0){
+    _applyState(_SAVED_STATE);
+    loaded = true;
+    _lsSave(); // Synchroniser localStorage
+  } else {
+    loaded = _lsLoad();
+  }
+  _renderAll();
+  if(loaded){
+    _showToast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles chargés');
     _dot('ok');
   } else {
-    // Première utilisation : sauvegarder les données par défaut
-    _save();
-    _renderAll();
+    _lsSave();
     _showToast('✅ Application prête');
+  }
+  if(!GH.token){
+    setTimeout(function(){
+      _showToast('⚙️ Token GitHub non configuré — données locales uniquement', 5000);
+    }, 4000);
   }
 })();
 
