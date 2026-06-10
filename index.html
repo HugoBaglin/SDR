@@ -1502,7 +1502,7 @@ function renderNumerotation(){
 }
 function renderNumJ(cont,list,title){
   const cols=customColsJ;
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();_lsSave();sbSchedule()" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=[...list].sort((a,b)=>a.num-b.num).map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
@@ -1517,7 +1517,7 @@ function renderNumJ(cont,list,title){
 function renderNumTous(cont){
   const cols=customColsJ;
   const list=[...JOUEURS].sort((a,b)=>a.num-b.num);
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();_lsSave();sbSchedule()" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
@@ -1535,7 +1535,7 @@ function expTousXLSX(){
 }
 function renderNumS(cont,list,title){
   const cols=customColsS;
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();_lsSave();sbSchedule()" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(s){
     const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce nscell" data-sid="'+s.id+'" data-col="'+c+'" data-titre="'+title+'" value="'+(s.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb nscell" data-sid="'+s.id+'" data-col="'+c+'_nb" data-titre="'+title+'" value="'+(s.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
@@ -1548,7 +1548,7 @@ function renderNumS(cont,list,title){
 }
 function setJTaille(id,col,val){
   const j=JOUEURS.find(x=>String(x.id)===String(id));
-  if(j){j.tailles[col]=val;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);}
+  if(j){j.tailles[col]=val;_lsSave();sbSchedule();}
   else{console.warn('Joueur non trouvé:',id);}
 }
 function updateStaff(id,col,v,titre){
@@ -1560,26 +1560,26 @@ function ajoutColJ(){
   if(!n||!n.trim())return;
   customColsJ.push(n.trim());
   renderNumerotation();
-  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
+  _lsSave();sbSchedule();
 }
 function ajoutColS(){
   const n=prompt('Nom de la nouvelle colonne :');
   if(!n||!n.trim())return;
   customColsS.push(n.trim());
   renderNumerotation();
-  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
+  _lsSave();sbSchedule();
 }
 function suppColJ(i){
   if(!confirm('Supprimer la colonne "'+customColsJ[i]+'" ?\n⚠️ Les données saisies dans cette colonne seront perdues.'))return;
   customColsJ.splice(i,1);
   renderNumerotation();
-  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
+  _lsSave();sbSchedule();
 }
 function suppColS(i){
   if(!confirm('Supprimer la colonne "'+customColsS[i]+'" ?\n⚠️ Les données saisies dans cette colonne seront perdues.'))return;
   customColsS.splice(i,1);
   renderNumerotation();
-  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
+  _lsSave();sbSchedule();
 }
 // ─── Joueur modal helpers ───
 function _buildColsGrid(gridId, cols, tailles, prefix){
@@ -1664,7 +1664,7 @@ function saveJoueur(){
   renderNumerotation();
   _lsSave();
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_jbSave,1500);
+  _saveTimer=setTimeout(_proxySave,2000);
 }
 
 function deleteJoueur(){
@@ -1674,7 +1674,7 @@ function deleteJoueur(){
   renderNumerotation();
   _lsSave();
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_jbSave,1500);
+  _saveTimer=setTimeout(_proxySave,2000);
 }
 
 // ─── Staff modal helpers ───
@@ -1733,7 +1733,7 @@ function saveStaff(){
   renderNumerotation();
   _lsSave();
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_jbSave,1500);
+  _saveTimer=setTimeout(_proxySave,2000);
 }
 
 function deleteStaff(){
@@ -1745,7 +1745,7 @@ function deleteStaff(){
   renderNumerotation();
   _lsSave();
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_jbSave,1500);
+  _saveTimer=setTimeout(_proxySave,2000);
 }
 
 // ════ FLOCAGE ════
@@ -2090,26 +2090,14 @@ function showStartupAlert(){
 }
 
 // ═══════════════════════════════════════════════════════════
-//  SAUVEGARDE — GitHub API (données dans le fichier lui-même)
-//  Fallback : localStorage pour usage hors-ligne
+//  SAUVEGARDE — Proxy Cloudflare Worker (token caché côté serveur)
 // ═══════════════════════════════════════════════════════════
 
-// ── Config GitHub ──
-const GH = {
-  owner : 'HugoBaglin',
-  repo  : 'SDR',
-  file  : 'index.html',
-  branch: 'main',
-  // Token GitHub avec droit "repo" (Contents read/write)
-  // Générer sur github.com → Settings → Developer settings → Personal access tokens
-  // Token splitté pour éviter la détection automatique GitHub
-  token : ['ghp_aLuqKseW0Cc0XH62eyEg','nnn3nuyGVY3HYrpQ'].join('')
-};
-
-const _LS_KEY = 'sdr_reims_v1';
-let   _ghSha  = '';   // SHA du fichier sur GitHub (nécessaire pour PUT)
-let   _saving = false;
-let   _saveQ  = false; // sauvegarde en attente
+// URL du Worker proxy (à mettre à jour après déploiement)
+const PROXY_URL = 'https://sdr-proxy.hugo-baglin.workers.dev';
+const _LS_KEY   = 'sdr_reims_v1';
+let   _saving   = false;
+let   _saveTimer= null;
 
 // ── Toast ──
 function _showToast(msg, dur){
@@ -2145,301 +2133,234 @@ function _btnIcon(ic){
   if(b) b.textContent = ic;
 }
 
-// ── État complet ──
+// ── État ──
 function _getState(){
   return {
-    DATA:DATA, FLOCAGE:FLOCAGE, JOUEURS:JOUEURS,
-    STAFF_PRO1:STAFF_PRO1, STAFF_PRO2:STAFF_PRO2, STAFF_ESPOIR:STAFF_ESPOIR,
-    CAT:CAT, customColsJ:customColsJ, customColsS:customColsS,
-    MATCHS:MATCHS, TODOS:TODOS, HISTORIQUE:HISTORIQUE,
-    ts: Date.now()
+    DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,
+    CAT,customColsJ,customColsS,MATCHS,TODOS,HISTORIQUE,
+    ts:Date.now()
   };
 }
 function _applyState(s){
-  if(!s || !s.DATA) return false;
-  DATA         = s.DATA;
-  FLOCAGE      = s.FLOCAGE      || FLOCAGE;
-  JOUEURS      = s.JOUEURS      || JOUEURS;
-  STAFF_PRO1   = s.STAFF_PRO1   || STAFF_PRO1;
-  STAFF_PRO2   = s.STAFF_PRO2   || STAFF_PRO2;
-  STAFF_ESPOIR = s.STAFF_ESPOIR || STAFF_ESPOIR;
-  CAT          = s.CAT          || CAT;
-  if(s.customColsJ) customColsJ = s.customColsJ;
-  if(s.customColsS) customColsS = s.customColsS;
-  MATCHS       = s.MATCHS       || MATCHS;
-  TODOS        = s.TODOS        || TODOS;
-  HISTORIQUE   = s.HISTORIQUE   || HISTORIQUE;
+  if(!s||!s.DATA) return false;
+  DATA=s.DATA; FLOCAGE=s.FLOCAGE||FLOCAGE; JOUEURS=s.JOUEURS||JOUEURS;
+  STAFF_PRO1=s.STAFF_PRO1||STAFF_PRO1; STAFF_PRO2=s.STAFF_PRO2||STAFF_PRO2;
+  STAFF_ESPOIR=s.STAFF_ESPOIR||STAFF_ESPOIR; CAT=s.CAT||CAT;
+  if(s.customColsJ) customColsJ=s.customColsJ;
+  if(s.customColsS) customColsS=s.customColsS;
+  MATCHS=s.MATCHS||MATCHS; TODOS=s.TODOS||TODOS; HISTORIQUE=s.HISTORIQUE||HISTORIQUE;
   return true;
 }
 
-// ── localStorage (toujours disponible, sauvegarde immédiate) ──
+// ── localStorage ──
 function _lsSave(){
   try{ localStorage.setItem(_LS_KEY, JSON.stringify(_getState())); return true; }
   catch(e){ return false; }
 }
 function _lsLoad(){
-  var keys = [_LS_KEY,'sdr_v3','sdr_data_v2'];
-  for(var i=0; i<keys.length; i++){
+  const keys=[_LS_KEY,'sdr_v3','sdr_data_v2'];
+  for(let i=0;i<keys.length;i++){
     try{
-      var raw = localStorage.getItem(keys[i]);
+      const raw=localStorage.getItem(keys[i]);
       if(!raw) continue;
-      var s = JSON.parse(raw);
-      if(s && s.JOUEURS && s.JOUEURS.length > 0){
+      const s=JSON.parse(raw);
+      if(s&&s.JOUEURS&&s.JOUEURS.length>0){
         _applyState(s);
-        if(keys[i] !== _LS_KEY) localStorage.setItem(_LS_KEY, raw);
+        if(keys[i]!==_LS_KEY) localStorage.setItem(_LS_KEY,raw);
         return true;
       }
-    } catch(e){ continue; }
+    }catch(e){continue;}
   }
   return false;
 }
 
-// ── GitHub API — injecter les données dans le fichier HTML ──
-async function _ghSave(){
-  if(!GH.token){ _dot('off'); return false; }
-  if(_saving){ _saveQ=true; return false; }
-  _saving = true;
+// ── Sauvegarde via proxy Worker ──
+async function _proxySave(){
+  if(_saving) return false;
+  _saving=true;
   _dot('saving');
-
   try{
-    // 1. Récupérer le fichier actuel (pour avoir le SHA)
-    const getR = await fetch(
-      'https://api.github.com/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.file+'?ref='+GH.branch,
-      { headers: { 'Authorization':'token '+GH.token, 'Accept':'application/vnd.github.v3+json' } }
-    );
-    if(!getR.ok) throw new Error('GitHub GET: '+getR.status);
-    const getD = await getR.json();
-    _ghSha = getD.sha;
-
-    // 2. Décoder le contenu actuel (base64)
-    const currentHtml = decodeURIComponent(escape(atob(getD.content.replace(/\n/g,''))));
-
-    // 3. Injecter les données dans le fichier
-    const stateJson = JSON.stringify(_getState());
-    const marker1 = '/* __SDR_DATA_START__ */';
-    const marker2 = '/* __SDR_DATA_END__ */';
-    let newHtml;
-    if(currentHtml.includes(marker1)){
-      // Remplacer les données existantes
-      const before = currentHtml.substring(0, currentHtml.indexOf(marker1)+marker1.length);
-      const after  = currentHtml.substring(currentHtml.indexOf(marker2));
-      newHtml = before + '\nconst _SAVED_STATE=' + stateJson + ';\n' + after;
+    const r = await fetch(PROXY_URL+'/save', {
+      method :'POST',
+      headers:{'Content-Type':'application/json'},
+      body   :JSON.stringify({state:_getState()})
+    });
+    const d = await r.json();
+    if(d.ok){
+      _dot('ok');
+      _saving=false;
+      return true;
     } else {
-      // Premiere fois : injecter les donnees
-      const closeTag = '<\/script>';
-      newHtml = currentHtml.replace(closeTag+'\n<\/body>', '/* __SDR_DATA_START__ */\nconst _SAVED_STATE='+stateJson+';\n/* __SDR_DATA_END__ */\n'+closeTag+'\n<\/body>');
+      throw new Error(d.error||'Erreur proxy');
     }
-
-    // 4. Encoder en base64 et envoyer
-    const encoded = btoa(unescape(encodeURIComponent(newHtml)));
-    const putR = await fetch(
-      'https://api.github.com/repos/'+GH.owner+'/'+GH.repo+'/contents/'+GH.file,
-      {
-        method : 'PUT',
-        headers: { 'Authorization':'token '+GH.token, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
-        body   : JSON.stringify({ message:'SDR: sauvegarde données '+new Date().toLocaleString('fr-FR'), content:encoded, sha:_ghSha, branch:GH.branch })
-      }
-    );
-    if(!putR.ok) throw new Error('GitHub PUT: '+putR.status);
-    _ghSha = (await putR.json()).content.sha;
-    _dot('ok'); _saving=false;
-    if(_saveQ){ _saveQ=false; setTimeout(_ghSave,500); }
-    return true;
-  } catch(e){
-    console.error('GitHub save error:', e);
-    _dot('err'); _saving=false;
+  }catch(e){
+    console.error('Proxy save error:',e);
+    _dot('err');
+    _saving=false;
     return false;
   }
 }
 
 // ── API publique ──
-var _saveTimer = null;
-
-function exportBackup(){
-  var data = JSON.stringify(_getState(), null, 2);
-  var blob = new Blob([data], {type:'application/json'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  var date = new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
-  a.href     = url;
-  a.download = 'SDR_backup_' + date + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  _showToast('📤 Backup téléchargé — conservez ce fichier précieusement !', 4000);
-}
-
-function importBackup(){
-  var inp = document.createElement('input');
-  inp.type   = 'file';
-  inp.accept = '.json,application/json';
-  inp.onchange = function(e){
-    var file = e.target.files[0];
-    if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev){
-      try{
-        var s = JSON.parse(ev.target.result);
-        if(!s || !s.JOUEURS || !s.DATA){
-          alert('Fichier invalide — ce n\'est pas un backup SDR.');
-          return;
-        }
-        if(!confirm('Importer ce backup ?\n' + s.JOUEURS.length + ' joueurs · ' + s.DATA.length + ' articles\n\nCela remplacera toutes vos données actuelles.')){
-          return;
-        }
-        _applyState(s);
-        _lsSave();
-        _renderAll();
-        _showToast('✅ Backup importé — ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
-      } catch(err){
-        alert('Erreur de lecture du fichier : ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  };
-  inp.click();
-}
-
 function sbSchedule(){
-  _lsSave();
-  _btnIcon('💾');
+  _lsSave(); // Local immédiat
+  _btnIcon('💾*');
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(function(){
+    _proxySave().then(function(ok){
+      _btnIcon('💾');
+    });
+  }, 2000);
 }
 
 function sbSave(){
   _lsSave();
-  _btnIcon('💾');
   return true;
 }
 
 async function manuSave(){
   _btnIcon('⏳');
   _lsSave();
-  _btnIcon('✅');
-  _showToast('✅ Données sauvegardées !');
-  setTimeout(function(){ _btnIcon('💾'); }, 2500);
+  const ok = await _proxySave();
+  if(ok){
+    _btnIcon('✅');
+    _showToast('✅ Données sauvegardées !');
+  } else {
+    _btnIcon('💾');
+    _showToast('⚠️ Sauvegardé localement — vérifiez la connexion');
+  }
+  setTimeout(function(){ _btnIcon('💾'); }, 3000);
 }
 
-// Sauvegarde locale à la fermeture
+// Export/Import backup
+function exportBackup(){
+  const data=JSON.stringify(_getState(),null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const date=new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
+  a.href=url; a.download='SDR_backup_'+date+'.json'; a.click();
+  URL.revokeObjectURL(url);
+  _showToast('📤 Backup téléchargé !',4000);
+}
+function importBackup(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=function(e){
+    const file=e.target.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        const s=JSON.parse(ev.target.result);
+        if(!s||!s.JOUEURS||!s.DATA){alert('Fichier invalide');return;}
+        if(!confirm('Importer ce backup ?\n'+s.JOUEURS.length+' joueurs · '+s.DATA.length+' articles\n\nCela remplacera toutes vos données actuelles.')) return;
+        _applyState(s); _lsSave(); _renderAll();
+        _showToast('✅ Backup importé !');
+      }catch(err){alert('Erreur: '+err.message);}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+// Sauvegardes automatiques fermeture
 window.addEventListener('beforeunload', function(){ _lsSave(); });
 window.addEventListener('pagehide',     function(){ _lsSave(); });
 window.addEventListener('visibilitychange', function(){
-  if(document.visibilityState === 'hidden') _lsSave();
+  if(document.visibilityState==='hidden') _lsSave();
 });
 
-// ── Render tout ──
+// ── Render all ──
 function _renderAll(){
-  try{ renderFilterBtns(); }  catch(e){ console.error(e); }
-  try{ renderCards(); }       catch(e){ console.error(e); }
-  try{ renderNumerotation(); }catch(e){ console.error(e); }
-  try{ renderFlocage(); }     catch(e){ console.error(e); }
-  try{ renderAlertes(); }     catch(e){ console.error(e); }
-  try{ renderTableau(); }     catch(e){ console.error(e); }
-  try{ renderTodo(); }        catch(e){ console.error(e); }
-  try{ renderMatchPage(); }   catch(e){ console.error(e); }
+  try{renderFilterBtns();}catch(e){}
+  try{renderCards();}catch(e){}
+  try{renderNumerotation();}catch(e){}
+  try{renderFlocage();}catch(e){}
+  try{renderAlertes();}catch(e){}
+  try{renderTableau();}catch(e){}
+  try{renderTodo();}catch(e){}
+  try{renderMatchPage();}catch(e){}
 }
 
-// ── Écouteur cellules numérotation (input+change+blur pour Safari iOS) ──
+// ── Écouteur cellules numérotation (input+change+blur pour Safari) ──
 function _handleNumCell(t){
   if(t.classList.contains('njcell')){
-    var jid = t.dataset.jid, col = t.dataset.col;
-    for(var k=0; k<JOUEURS.length; k++){
-      if(String(JOUEURS[k].id)===String(jid)){
-        JOUEURS[k].tailles[col]=t.value;
-        break;
-      }
+    var jid=t.dataset.jid, col=t.dataset.col;
+    for(var k=0;k<JOUEURS.length;k++){
+      if(String(JOUEURS[k].id)===String(jid)){JOUEURS[k].tailles[col]=t.value;break;}
     }
     _lsSave();
     return true;
   }
   if(t.classList.contains('nscell')){
-    var sid=t.dataset.sid, col2=t.dataset.col, titre=t.dataset.titre;
-    var lst = titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
-    for(var m=0; m<lst.length; m++){
-      if(String(lst[m].id)===String(sid)){
-        lst[m].tailles[col2]=t.value;
-        break;
-      }
+    var sid=t.dataset.sid,col2=t.dataset.col,titre=t.dataset.titre;
+    var lst=titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
+    for(var m=0;m<lst.length;m++){
+      if(String(lst[m].id)===String(sid)){lst[m].tailles[col2]=t.value;break;}
     }
     _lsSave();
     return true;
   }
   return false;
 }
-
-// 'input' : chaque frappe (Safari iOS ne déclenche pas toujours 'change')
-document.addEventListener('input', function(e){
-  _handleNumCell(e.target);
-});
-
-// 'change' : quand le champ perd le focus
+document.addEventListener('input',  function(e){ _handleNumCell(e.target); });
 document.addEventListener('change', function(e){
-  var t = e.target;
+  var t=e.target;
   if(_handleNumCell(t)) return;
   if(t.id==='searchInput'||t.classList.contains('fbtn')||t.classList.contains('ms')) return;
   sbSchedule();
 });
-
-// 'blur' : filet de sécurité supplémentaire quand on quitte un champ
 document.addEventListener('blur', function(e){
-  var t = e.target;
-  if(t.classList.contains('njcell') || t.classList.contains('nscell')){
-    _handleNumCell(t);
-  }
-}, true); // capture phase pour attraper tous les blurs
-
+  if(e.target.classList.contains('njcell')||e.target.classList.contains('nscell')) _handleNumCell(e.target);
+}, true);
 
 // ── Patch auto-save ──
 (function(){
-  var fns=[
-    'creerArticle','saveStock','confirmDelete','saveAttrib',
+  var fns=['creerArticle','saveStock','confirmDelete','saveAttrib',
     'creerFlocage','saveFlocEdit','deleteFlocage','saveFlocAttrib',
     'saveJoueur','deleteJoueur','saveStaff','deleteStaff',
     'saveMatch','deleteMatch','cycleCell','updMCom','setRes','updMHead',
     'saveTodo','deleteTodo','toggleTodo','toggleVu','editSeuil',
     'toggleGroupMatchSel','selectAllMatch','clearMatchSel',
     'validerSelection','removePhoto','ajoutColJ','ajoutColS',
-    'suppColJ','suppColS','renameCat','addCat','deleteCat'
-  ];
+    'suppColJ','suppColS','renameCat','addCat','deleteCat'];
   fns.forEach(function(name){
     if(typeof window[name]==='function'){
       var orig=window[name];
-      window[name]=function(){ var r=orig.apply(this,arguments); sbSchedule(); return r; };
+      window[name]=function(){var r=orig.apply(this,arguments);sbSchedule();return r;};
     }
   });
 })();
 
 // ── INIT ──
-try{ _addSyncDot(); }catch(e){}
-try{ renderFilterBtns(); }catch(e){}
-try{ renderCards(); }catch(e){ document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>'; }
-try{ showStartupAlert(); }catch(e){}
+try{_addSyncDot();}catch(e){}
+try{renderFilterBtns();}catch(e){}
+try{renderCards();}catch(e){document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>';}
+try{showStartupAlert();}catch(e){}
 
 (function(){
-  var loaded = false;
-
-  // 1. PRIORITÉ ABSOLUE : localStorage (modifications récentes de l'utilisateur)
+  // 1. Priorité : localStorage (données les plus récentes)
   var lsOk = _lsLoad();
   if(lsOk){
-    loaded = true;
+    _renderAll();
+    _showToast('✅ '+JOUEURS.length+' joueurs · '+DATA.length+' articles chargés');
+    _dot('ok');
+    return;
   }
-  // 2. Si localStorage vide, utiliser _SAVED_STATE (données intégrées dans le fichier)
-  else if(typeof _SAVED_STATE !== 'undefined' && _SAVED_STATE && _SAVED_STATE.JOUEURS && _SAVED_STATE.JOUEURS.length > 0){
+  // 2. Données intégrées dans le fichier (_SAVED_STATE)
+  if(typeof _SAVED_STATE!=='undefined' && _SAVED_STATE && _SAVED_STATE.JOUEURS && _SAVED_STATE.JOUEURS.length>0){
     _applyState(_SAVED_STATE);
     _lsSave();
-    loaded = true;
-  }
-  // 3. Aucune donnée : première utilisation
-  else {
-    _lsSave();
-  }
-
-  _renderAll();
-
-  if(loaded){
-    _showToast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles chargés');
+    _renderAll();
+    _showToast('✅ '+JOUEURS.length+' joueurs · '+DATA.length+' articles chargés');
     _dot('ok');
-  } else {
-    _showToast('✅ Application prête');
+    return;
   }
+  // 3. Données par défaut du fichier
+  _lsSave();
+  _renderAll();
+  _showToast('✅ Application prête');
 })();
 
 </script>
