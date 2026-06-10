@@ -316,6 +316,12 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
       <div class="hs-i" id="saveBtn" onclick="manuSave()" style="cursor:pointer;background:rgba(39,174,96,.25)" title="Enregistrer manuellement">
         <div class="hs-n" id="saveBtnIcon">💾</div><div class="hs-l">Enreg.</div>
       </div>
+      <div class="hs-i" onclick="exportBackup()" style="cursor:pointer;background:rgba(255,255,255,.12)" title="Télécharger une sauvegarde de toutes vos données">
+        <div class="hs-n">📤</div><div class="hs-l">Backup</div>
+      </div>
+      <div class="hs-i" onclick="importBackup()" style="cursor:pointer;background:rgba(255,255,255,.12)" title="Restaurer depuis un backup">
+        <div class="hs-n">📥</div><div class="hs-l">Import</div>
+      </div>
       <div class="hs-i" id="backBtn" onclick="goBack()" style="cursor:pointer;background:rgba(255,255,255,.12)" title="Retour à la page précédente">
         <div class="hs-n">◀</div><div class="hs-l">Retour</div>
       </div>
@@ -2245,18 +2251,53 @@ async function _ghSave(){
 // ── API publique ──
 var _saveTimer = null;
 
+function exportBackup(){
+  var data = JSON.stringify(_getState(), null, 2);
+  var blob = new Blob([data], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var date = new Date().toLocaleDateString('fr-FR').replace(/\//g,'-');
+  a.href     = url;
+  a.download = 'SDR_backup_' + date + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  _showToast('📤 Backup téléchargé — conservez ce fichier précieusement !', 4000);
+}
+
+function importBackup(){
+  var inp = document.createElement('input');
+  inp.type   = 'file';
+  inp.accept = '.json,application/json';
+  inp.onchange = function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        var s = JSON.parse(ev.target.result);
+        if(!s || !s.JOUEURS || !s.DATA){
+          alert('Fichier invalide — ce n\'est pas un backup SDR.');
+          return;
+        }
+        if(!confirm('Importer ce backup ?\n' + s.JOUEURS.length + ' joueurs · ' + s.DATA.length + ' articles\n\nCela remplacera toutes vos données actuelles.')){
+          return;
+        }
+        _applyState(s);
+        _lsSave();
+        _renderAll();
+        _showToast('✅ Backup importé — ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
+      } catch(err){
+        alert('Erreur de lecture du fichier : ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
 function sbSchedule(){
-  // 1. localStorage immédiat (toujours)
   _lsSave();
-  _btnIcon('💾*');
-  // 2. GitHub différé (2s après dernière modif)
-  clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(function(){
-    _ghSave().then(function(ok){
-      if(ok){ _btnIcon('💾'); _showToast('✅ Sauvegardé sur GitHub'); }
-      else  { _btnIcon('💾'); } // localStorage toujours OK
-    });
-  }, 2000);
+  _btnIcon('💾');
 }
 
 function sbSave(){
@@ -2268,20 +2309,9 @@ function sbSave(){
 async function manuSave(){
   _btnIcon('⏳');
   _lsSave();
-  if(GH.token){
-    const ok = await _ghSave();
-    if(ok){
-      _btnIcon('✅');
-      _showToast('✅ Données sauvegardées sur GitHub !');
-    } else {
-      _btnIcon('💾');
-      _showToast('⚠️ Sauvegardé localement (GitHub indisponible)');
-    }
-  } else {
-    _btnIcon('💾');
-    _showToast('💾 Sauvegardé localement — configurer GitHub pour la persistance');
-  }
-  setTimeout(function(){ _btnIcon('💾'); }, 3000);
+  _btnIcon('✅');
+  _showToast('✅ Données sauvegardées !');
+  setTimeout(function(){ _btnIcon('💾'); }, 2500);
 }
 
 // Sauvegarde locale à la fermeture
@@ -2357,27 +2387,31 @@ try{ renderCards(); }catch(e){ document.body.innerHTML='<h2 style="padding:20px;
 try{ showStartupAlert(); }catch(e){}
 
 (function(){
-  // Charger depuis _SAVED_STATE (données dans le fichier) ou localStorage
   var loaded = false;
-  if(typeof _SAVED_STATE !== 'undefined' && _SAVED_STATE && _SAVED_STATE.JOUEURS && _SAVED_STATE.JOUEURS.length > 0){
-    _applyState(_SAVED_STATE);
+
+  // 1. PRIORITÉ ABSOLUE : localStorage (modifications récentes de l'utilisateur)
+  var lsOk = _lsLoad();
+  if(lsOk){
     loaded = true;
-    _lsSave(); // Synchroniser localStorage
-  } else {
-    loaded = _lsLoad();
   }
+  // 2. Si localStorage vide, utiliser _SAVED_STATE (données intégrées dans le fichier)
+  else if(typeof _SAVED_STATE !== 'undefined' && _SAVED_STATE && _SAVED_STATE.JOUEURS && _SAVED_STATE.JOUEURS.length > 0){
+    _applyState(_SAVED_STATE);
+    _lsSave();
+    loaded = true;
+  }
+  // 3. Aucune donnée : première utilisation
+  else {
+    _lsSave();
+  }
+
   _renderAll();
+
   if(loaded){
     _showToast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles chargés');
     _dot('ok');
   } else {
-    _lsSave();
     _showToast('✅ Application prête');
-  }
-  if(!GH.token){
-    setTimeout(function(){
-      _showToast('⚙️ Token GitHub non configuré — données locales uniquement', 5000);
-    }, 4000);
   }
 })();
 
