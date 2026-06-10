@@ -1448,11 +1448,11 @@ function renderNumerotation(){
 }
 function renderNumJ(cont,list,title){
   const cols=customColsJ;
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=[...list].sort((a,b)=>a.num-b.num).map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
@@ -1463,12 +1463,12 @@ function renderNumJ(cont,list,title){
 function renderNumTous(cont){
   const cols=customColsJ;
   const list=[...JOUEURS].sort((a,b)=>a.num-b.num);
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsJ['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
     const bg=j.groupe==='Prêt'?'background:#f8fff8;':'';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="0"></td>';}).join('');
     return '<tr><td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')" >'+j.num+'</td><td style="cursor:pointer;white-space:nowrap" onclick="openJoueurEdit(\''+j.id+'\')" ><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'+cells+'</tr>';
   }).join('');
   cont.innerHTML='<div style="background:#f0fff4;border:2px solid #27ae60;border-radius:9px;padding:8px 13px;margin-bottom:13px;font-size:.73rem;font-weight:700;color:#155724">🌍 Vue consolidée — données en direct depuis les tableaux PRO, ELITE &amp; ESPOIR. <span class="nbp1">PRO</span> <span class="nbp2">ELITE</span> <span class="nbespoir">ESPOIR</span> <span class="nbpt">Prêt</span></div>'
@@ -1481,10 +1481,10 @@ function expTousXLSX(){
 }
 function renderNumS(cont,list,title){
   const cols=customColsS;
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(s){
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');_lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000)" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="font-family:\'Bebas Neue\',sans-serif;color:var(--r);cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')">'+s.initiales+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')"><span style="font-weight:800">'+s.nom+'</span></td>'
@@ -1501,26 +1501,26 @@ function ajoutColJ(){
   if(!n||!n.trim())return;
   customColsJ.push(n.trim());
   renderNumerotation();
-  clearTimeout(_saveTimer);sbSave();
+  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
 }
 function ajoutColS(){
   const n=prompt('Nom de la nouvelle colonne :');
   if(!n||!n.trim())return;
   customColsS.push(n.trim());
   renderNumerotation();
-  clearTimeout(_saveTimer);sbSave();
+  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
 }
 function suppColJ(i){
   if(!confirm('Supprimer la colonne "'+customColsJ[i]+'" ?\n⚠️ Les données saisies dans cette colonne seront perdues.'))return;
   customColsJ.splice(i,1);
   renderNumerotation();
-  clearTimeout(_saveTimer);sbSave();
+  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
 }
 function suppColS(i){
   if(!confirm('Supprimer la colonne "'+customColsS[i]+'" ?\n⚠️ Les données saisies dans cette colonne seront perdues.'))return;
   customColsS.splice(i,1);
   renderNumerotation();
-  clearTimeout(_saveTimer);sbSave();
+  _lsSave();clearTimeout(_jbTimer);_jbTimer=setTimeout(_jbSave,2000);
 }
 // ─── Joueur modal helpers ───
 function _buildColsGrid(gridId, cols, tailles, prefix){
@@ -2035,7 +2035,6 @@ function showStartupAlert(){
 // ════════════════════════════════════════════════════════
 const JBIN_ACCESS = '$2a$10$TrOcg3kWnwSBrkVDJKFuE.mZHtDNhRbHh.rI/x5ZTxY6XJ67tpGd6';
 const JBIN_ID     = '6a1edd52f5f4af5e29ad346f';
-const LS_KEY      = 'sdr_v3';
 
 let _jbTimer = null;
 let _jbBusy  = false;
@@ -2076,11 +2075,31 @@ function _applyState(s){
 }
 
 // ── localStorage (PRIMAIRE — toujours fiable) ──
+const LS_KEYS=['sdr_v3','sdr_data_v2','sdr_data_v1','sdr_bin_data']; // Toutes les clés possibles
+
 function _lsSave(){
-  try{localStorage.setItem(LS_KEY,JSON.stringify(_getState()));return true;}catch(e){return false;}
+  try{
+    const data=JSON.stringify(_getState());
+    // Sauvegarder sous TOUTES les clés pour compatibilité
+    localStorage.setItem('sdr_v3',data);
+    localStorage.setItem('sdr_data_v2',data);
+    return true;
+  }catch(e){console.error('lsSave error',e);return false;}
 }
 function _lsLoad(){
-  try{const r=localStorage.getItem(LS_KEY);if(!r)return false;return _applyState(JSON.parse(r));}catch(e){return false;}
+  // Essayer chaque clé dans l'ordre
+  for(const key of LS_KEYS){
+    try{
+      const raw=localStorage.getItem(key);
+      if(!raw)continue;
+      const s=JSON.parse(raw);
+      if(s&&s.DATA&&s.DATA.length>0){
+        console.log('Données chargées depuis localStorage clé:',key,'articles:',s.DATA.length,'joueurs:',s.JOUEURS&&s.JOUEURS.length);
+        return _applyState(s);
+      }
+    }catch(e){continue;}
+  }
+  return false;
 }
 
 // ── JSONBin (BACKUP cloud) ──
@@ -2190,15 +2209,39 @@ try{showStartupAlert();}catch(e){}
 
 setTimeout(async function(){
   _showToast('⏳ Chargement...');
-  const ok=await sbLoad();
-  _renderAll();
-  if(ok){
-    _lsSave();
-    _showToast('✅ Données chargées');
-  } else {
-    _lsSave(); // Sauvegarder les données par défaut
-    _showToast('✅ Prêt');
+
+  // 1. Essayer localStorage EN PREMIER (toujours disponible)
+  const lsOk=_lsLoad();
+  if(lsOk){
+    _renderAll();
+    _showToast('✅ Données chargées ('+JOUEURS.length+' joueurs, '+DATA.length+' articles)');
+    // Tenter sync cloud en arrière-plan sans bloquer
+    _jbLoad().then(jbOk=>{
+      if(jbOk){
+        // Cloud plus récent → recharger
+        const lsTs=JSON.parse(localStorage.getItem('sdr_v3')||'{}').ts||0;
+        // On ne prend le cloud que s'il est significativement plus récent (>10s)
+        _lsSave(); // re-sauvegarder en local
+        _dot('ok');
+      }
+    }).catch(()=>{});
+    return;
   }
+
+  // 2. Pas de données locales → essayer cloud
+  const jbOk=await _jbLoad();
+  if(jbOk){
+    _lsSave();
+    _renderAll();
+    _showToast('✅ Données cloud chargées');
+    _dot('ok');
+    return;
+  }
+
+  // 3. Aucune donnée → première utilisation, données par défaut du fichier
+  _lsSave();
+  _renderAll();
+  _showToast('✅ Prêt — première utilisation');
 },300);
 
 </script>
