@@ -1452,7 +1452,7 @@ function renderNumJ(cont,list,title){
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=[...list].sort((a,b)=>a.num-b.num).map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px'+(typeof bg!=='undefined'?';'+bg:'')+'" ><input class="nce njcell" data-jid="'+j.id+'" data-col="'+c+'" value="'+(j.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px'+(typeof bg!=='undefined'?';'+bg:'')+'" ><input class="nce nb njcell" data-jid="'+j.id+'" data-col="'+c+'_nb" value="'+(j.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce njcell" data-jid="'+j.id+'" data-col="'+c+'" value="'+(j.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb njcell" data-jid="'+j.id+'" data-col="'+c+'_nb" value="'+(j.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
@@ -2036,250 +2036,235 @@ function showStartupAlert(){
 }
 
 // ════════════════════════════════════════════════════════
-//  SYNC — localStorage (primaire) + JSONBin (cloud backup)
+//  SAUVEGARDE — localStorage uniquement (simple et fiable)
 // ════════════════════════════════════════════════════════
-const JBIN_ACCESS = '$2a$10$TrOcg3kWnwSBrkVDJKFuE.mZHtDNhRbHh.rI/x5ZTxY6XJ67tpGd6';
-const JBIN_ID     = '6a1edd52f5f4af5e29ad346f';
+const _LS_KEY = 'sdr_reims_v1';
 
-let _jbTimer = null;
-let _jbBusy  = false;
-let _jbAt    = 0;
-
-// ── UI helpers ──
-function _showToast(msg,dur=3500){
-  let t=document.getElementById('sbToast');
-  if(!t){t=document.createElement('div');t.id='sbToast';
-    t.style.cssText='position:fixed;bottom:80px;right:18px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.78rem;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;max-width:300px;box-shadow:0 4px 16px rgba(0,0,0,.3)';
-    document.body.appendChild(t);}
-  t.textContent=msg;t.style.opacity='1';
-  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',dur);
+// ── Toast ──
+function _showToast(msg, dur){
+  dur = dur||3500;
+  let t = document.getElementById('sbToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'sbToast';
+    t.style.cssText = 'position:fixed;bottom:80px;right:18px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.78rem;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;max-width:300px;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._t);
+  t._t = setTimeout(function(){ t.style.opacity = '0'; }, dur);
 }
+
+// ── Indicateur sync ──
 function _addSyncDot(){
-  const hi=document.querySelector('.hi');
-  if(!hi||document.getElementById('syncDot'))return;
-  const d=document.createElement('div');d.id='syncDot';
-  d.style.cssText='width:11px;height:11px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .4s';
+  const hi = document.querySelector('.hi');
+  if(!hi || document.getElementById('syncDot')) return;
+  const d = document.createElement('div');
+  d.id = 'syncDot';
+  d.style.cssText = 'width:11px;height:11px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .4s';
   hi.appendChild(d);
 }
-function _dot(s){const d=document.getElementById('syncDot');if(d)d.style.background={ok:'#27ae60',saving:'#e67e22',err:'#c0392b',off:'#aaa'}[s]||'#aaa';}
-function _btnIcon(ic){const b=document.getElementById('saveBtnIcon');if(b)b.textContent=ic;}
-
-// ── Données ──
-function _getState(){
-  return {v:3,DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,customColsJ,customColsS,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
+function _dot(s){
+  const d = document.getElementById('syncDot');
+  if(d) d.style.background = {ok:'#27ae60',saving:'#e67e22',err:'#c0392b',off:'#aaa'}[s]||'#aaa';
 }
+function _btnIcon(ic){
+  const b = document.getElementById('saveBtnIcon');
+  if(b) b.textContent = ic;
+}
+
+// ── État complet ──
+function _getState(){
+  return {
+    DATA:DATA, FLOCAGE:FLOCAGE, JOUEURS:JOUEURS,
+    STAFF_PRO1:STAFF_PRO1, STAFF_PRO2:STAFF_PRO2, STAFF_ESPOIR:STAFF_ESPOIR,
+    CAT:CAT, customColsJ:customColsJ, customColsS:customColsS,
+    MATCHS:MATCHS, TODOS:TODOS, HISTORIQUE:HISTORIQUE,
+    ts:Date.now()
+  };
+}
+
 function _applyState(s){
-  if(!s||!s.DATA)return false;
-  DATA=s.DATA; FLOCAGE=s.FLOCAGE||FLOCAGE; JOUEURS=s.JOUEURS||JOUEURS;
-  STAFF_PRO1=s.STAFF_PRO1||STAFF_PRO1; STAFF_PRO2=s.STAFF_PRO2||STAFF_PRO2;
-  STAFF_ESPOIR=s.STAFF_ESPOIR||STAFF_ESPOIR; CAT=s.CAT||CAT;
-  if(s.customColsJ) customColsJ=s.customColsJ;
-  if(s.customColsS) customColsS=s.customColsS;
-  MATCHS=s.MATCHS||MATCHS; TODOS=s.TODOS||TODOS; HISTORIQUE=s.HISTORIQUE||HISTORIQUE;
+  if(!s || !s.DATA) return false;
+  DATA         = s.DATA;
+  FLOCAGE      = s.FLOCAGE      || FLOCAGE;
+  JOUEURS      = s.JOUEURS      || JOUEURS;
+  STAFF_PRO1   = s.STAFF_PRO1   || STAFF_PRO1;
+  STAFF_PRO2   = s.STAFF_PRO2   || STAFF_PRO2;
+  STAFF_ESPOIR = s.STAFF_ESPOIR || STAFF_ESPOIR;
+  CAT          = s.CAT          || CAT;
+  if(s.customColsJ) customColsJ = s.customColsJ;
+  if(s.customColsS) customColsS = s.customColsS;
+  MATCHS       = s.MATCHS       || MATCHS;
+  TODOS        = s.TODOS        || TODOS;
+  HISTORIQUE   = s.HISTORIQUE   || HISTORIQUE;
   return true;
 }
 
-// ── localStorage (PRIMAIRE — toujours fiable) ──
-const LS_KEYS=['sdr_v3','sdr_data_v2','sdr_data_v1','sdr_bin_data']; // Toutes les clés possibles
-
-function _lsSave(){
+// ── Sauvegarde localStorage ──
+function _save(){
   try{
-    const data=JSON.stringify(_getState());
-    // Sauvegarder sous TOUTES les clés pour compatibilité
-    localStorage.setItem('sdr_v3',data);
-    localStorage.setItem('sdr_data_v2',data);
+    localStorage.setItem(_LS_KEY, JSON.stringify(_getState()));
+    _dot('ok');
+    _btnIcon('💾');
     return true;
-  }catch(e){console.error('lsSave error',e);return false;}
+  } catch(e){
+    console.error('Save error:', e);
+    _dot('err');
+    return false;
+  }
 }
-function _lsLoad(){
-  // Essayer chaque clé dans l'ordre
-  for(const key of LS_KEYS){
+
+// ── Chargement localStorage ──
+function _load(){
+  // Essayer la clé principale
+  var keys = [_LS_KEY, 'sdr_v3', 'sdr_data_v2', 'sdr_data_v1'];
+  for(var i=0; i<keys.length; i++){
     try{
-      const raw=localStorage.getItem(key);
-      if(!raw)continue;
-      const s=JSON.parse(raw);
-      if(s&&s.DATA&&s.DATA.length>0){
-        console.log('Données chargées depuis localStorage clé:',key,'articles:',s.DATA.length,'joueurs:',s.JOUEURS&&s.JOUEURS.length);
-        return _applyState(s);
+      var raw = localStorage.getItem(keys[i]);
+      if(!raw) continue;
+      var s = JSON.parse(raw);
+      if(s && s.JOUEURS && s.JOUEURS.length > 0){
+        _applyState(s);
+        // Migrer vers la clé principale
+        if(keys[i] !== _LS_KEY) localStorage.setItem(_LS_KEY, raw);
+        return true;
       }
-    }catch(e){continue;}
+    } catch(e){ continue; }
   }
   return false;
 }
 
-// ── JSONBin (BACKUP cloud) ──
-async function _jbSave(){
-  if(_jbBusy&&Date.now()-_jbAt<8000)return;
-  _jbBusy=true;_jbAt=Date.now();_dot('saving');
-  try{
-    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID,{method:'PUT',
-      headers:{'Content-Type':'application/json','X-Access-Key':JBIN_ACCESS},
-      body:JSON.stringify(_getState())});
-    _dot(r.ok?'ok':'err');
-  }catch(e){_dot('err');}
-  _jbBusy=false;
-}
-async function _jbLoad(){
-  try{
-    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{headers:{'X-Access-Key':JBIN_ACCESS}});
-    if(!r.ok)return false;
-    const d=await r.json();return _applyState(d.record);
-  }catch(e){return false;}
-}
-
 // ── API publique ──
-// Sauvegarde IMMÉDIATE en local + cloud en diff
+var _saveTimer = null;
+
 function sbSchedule(){
-  _lsSave(); // LOCAL = immédiat, garantie 100%
+  _dot('saving');
   _btnIcon('💾*');
-  clearTimeout(_jbTimer);
-  _jbTimer=setTimeout(()=>{_jbSave();_btnIcon('💾');},2000);
+  // Sauvegarde immédiate (pas de délai)
+  _save();
 }
 
-async function sbSave(){
-  _lsSave();
-  _btnIcon('💾');
-  await _jbSave();
-}
-
-async function sbLoad(){
-  // Essayer cloud en premier (plus récent), sinon local
-  const jbOk=await _jbLoad();
-  if(jbOk){_lsSave();_dot('ok');return true;}
-  const lsOk=_lsLoad();
-  if(lsOk){_dot('ok');return true;}
-  return false;
+function sbSave(){
+  return _save();
 }
 
 async function manuSave(){
   _btnIcon('⏳');
-  _lsSave();
-  _dot('saving');
-  try{
-    _jbBusy=false;
-    await _jbSave();
+  var ok = _save();
+  if(ok){
     _btnIcon('✅');
     _showToast('✅ Données enregistrées !');
-    setTimeout(()=>_btnIcon('💾'),2500);
-  }catch(e){_btnIcon('❌');setTimeout(()=>_btnIcon('💾'),2000);}
+    setTimeout(function(){ _btnIcon('💾'); }, 2500);
+  } else {
+    _btnIcon('❌');
+    setTimeout(function(){ _btnIcon('💾'); }, 2000);
+  }
 }
 
-// Sauvegarde locale garantie à la fermeture
-window.addEventListener('beforeunload',()=>_lsSave());
-window.addEventListener('pagehide',()=>_lsSave());
-window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_lsSave();});
+// Sauvegarde à la fermeture
+window.addEventListener('beforeunload', function(){ _save(); });
+window.addEventListener('pagehide',     function(){ _save(); });
+window.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'hidden') _save();
+});
 
-// ── Render all ──
+// ── Render tout ──
 function _renderAll(){
-  try{renderFilterBtns();}catch(e){}
-  try{renderCards();}catch(e){}
-  try{renderNumerotation();}catch(e){}
-  try{renderFlocage();}catch(e){}
-  try{renderAlertes();}catch(e){}
-  try{renderTableau();}catch(e){}
-  try{renderTodo();}catch(e){}
-  try{renderMatchPage();}catch(e){}
+  try{ renderFilterBtns(); }  catch(e){}
+  try{ renderCards(); }       catch(e){}
+  try{ renderNumerotation(); }catch(e){}
+  try{ renderFlocage(); }     catch(e){}
+  try{ renderAlertes(); }     catch(e){}
+  try{ renderTableau(); }     catch(e){}
+  try{ renderTodo(); }        catch(e){}
+  try{ renderMatchPage(); }   catch(e){}
 }
 
-// ── Patch auto-save sur toutes les fonctions de modification ──
+// ── Écouteur pour cellules numérotation (data-attributes) ──
+document.addEventListener('change', function(e){
+  var t = e.target;
+
+  if(t.classList.contains('njcell')){
+    var jid = t.dataset.jid;
+    var col = t.dataset.col;
+    var j = null;
+    for(var k=0; k<JOUEURS.length; k++){
+      if(String(JOUEURS[k].id) === String(jid)){ j = JOUEURS[k]; break; }
+    }
+    if(j){
+      j.tailles[col] = t.value;
+      _save();
+    }
+    return;
+  }
+
+  if(t.classList.contains('nscell')){
+    var sid   = t.dataset.sid;
+    var col2  = t.dataset.col;
+    var titre = t.dataset.titre;
+    var lst   = titre==='PRO 1' ? STAFF_PRO1 : titre==='PRO 2' ? STAFF_PRO2 : STAFF_ESPOIR;
+    var s = null;
+    for(var m=0; m<lst.length; m++){
+      if(String(lst[m].id) === String(sid)){ s = lst[m]; break; }
+    }
+    if(s){
+      s.tailles[col2] = t.value;
+      _save();
+    }
+    return;
+  }
+
+  // Tous les autres champs
+  if(t.id === 'searchInput' || t.classList.contains('fbtn') || t.classList.contains('ms')) return;
+  sbSchedule();
+});
+
+// ── Patch auto-save sur les fonctions de modification ──
 (function(){
-  const fns=['creerArticle','saveStock','confirmDelete','saveAttrib',
+  var fns = [
+    'creerArticle','saveStock','confirmDelete','saveAttrib',
     'creerFlocage','saveFlocEdit','deleteFlocage','saveFlocAttrib',
     'saveJoueur','deleteJoueur','saveStaff','deleteStaff',
     'saveMatch','deleteMatch','cycleCell','updMCom','setRes','updMHead',
     'saveTodo','deleteTodo','toggleTodo','toggleVu','editSeuil',
     'toggleGroupMatchSel','selectAllMatch','clearMatchSel',
-    'validerSelection','removePhoto','ajoutColJ','ajoutColS','suppColJ','suppColS',
-    'renameCat','addCat','deleteCat'];
-  fns.forEach(name=>{
-    if(typeof window[name]==='function'){
-      const orig=window[name];
-      window[name]=function(...a){const r=orig.apply(this,a);sbSchedule();return r;};
+    'validerSelection','removePhoto','ajoutColJ','ajoutColS',
+    'suppColJ','suppColS','renameCat','addCat','deleteCat'
+  ];
+  fns.forEach(function(name){
+    if(typeof window[name] === 'function'){
+      var orig = window[name];
+      window[name] = function(){
+        var r = orig.apply(this, arguments);
+        _save();
+        return r;
+      };
     }
   });
 })();
 
-// ── Délégation d'événements pour les cellules numérotation ──
-document.addEventListener('change', function(e){
-  const t = e.target;
-
-  // Cellule joueur (njcell)
-  if(t.classList.contains('njcell')){
-    const jid = t.dataset.jid;
-    const col = t.dataset.col;
-    const j = JOUEURS.find(x => String(x.id) === String(jid));
-    if(j){
-      j.tailles[col] = t.value;
-      _lsSave();
-      clearTimeout(_jbTimer);
-      _jbTimer = setTimeout(_jbSave, 2000);
-    }
-    return;
-  }
-
-  // Cellule staff (nscell)
-  if(t.classList.contains('nscell')){
-    const sid   = t.dataset.sid;
-    const col   = t.dataset.col;
-    const titre = t.dataset.titre;
-    const l = titre==='PRO 1'?STAFF_PRO1 : titre==='PRO 2'?STAFF_PRO2 : STAFF_ESPOIR;
-    const s = l.find(x => String(x.id) === String(sid));
-    if(s){
-      s.tailles[col] = t.value;
-      _lsSave();
-      clearTimeout(_jbTimer);
-      _jbTimer = setTimeout(_jbSave, 2000);
-    }
-    return;
-  }
-
-  // Tous les autres champs — filet de sécurité
-  if(t.id==='searchInput'||t.classList.contains('fbtn')||t.classList.contains('ms'))return;
-  sbSchedule();
-});
-
 // ── INIT ──
-try{_addSyncDot();}catch(e){}
-try{renderFilterBtns();}catch(e){}
-try{renderCards();}catch(e){document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur init: '+e.message+'</h2>';}
-try{showStartupAlert();}catch(e){}
+try{ _addSyncDot(); }catch(e){}
+try{ renderFilterBtns(); }catch(e){}
+try{ renderCards(); }catch(e){ document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>'; }
+try{ showStartupAlert(); }catch(e){}
 
-setTimeout(async function(){
-  _showToast('⏳ Chargement...');
-
-  // 1. Essayer localStorage EN PREMIER (toujours disponible)
-  const lsOk=_lsLoad();
-  if(lsOk){
+(function(){
+  var ok = _load();
+  if(ok){
     _renderAll();
-    _showToast('✅ Données chargées ('+JOUEURS.length+' joueurs, '+DATA.length+' articles)');
-    // Tenter sync cloud en arrière-plan sans bloquer
-    _jbLoad().then(jbOk=>{
-      if(jbOk){
-        // Cloud plus récent → recharger
-        const lsTs=JSON.parse(localStorage.getItem('sdr_v3')||'{}').ts||0;
-        // On ne prend le cloud que s'il est significativement plus récent (>10s)
-        _lsSave(); // re-sauvegarder en local
-        _dot('ok');
-      }
-    }).catch(()=>{});
-    return;
-  }
-
-  // 2. Pas de données locales → essayer cloud
-  const jbOk=await _jbLoad();
-  if(jbOk){
-    _lsSave();
-    _renderAll();
-    _showToast('✅ Données cloud chargées');
+    _save(); // Migrer vers clé principale si nécessaire
+    _showToast('✅ Données chargées — ' + JOUEURS.length + ' joueurs, ' + DATA.length + ' articles');
     _dot('ok');
-    return;
+  } else {
+    // Première utilisation : sauvegarder les données par défaut
+    _save();
+    _renderAll();
+    _showToast('✅ Application prête');
   }
-
-  // 3. Aucune donnée → première utilisation, données par défaut du fichier
-  _lsSave();
-  _renderAll();
-  _showToast('✅ Prêt — première utilisation');
-},300);
+})();
 
 </script>
 </body>
