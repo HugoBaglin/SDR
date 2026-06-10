@@ -1100,7 +1100,11 @@ function goPage(pid){
   nav.querySelectorAll('.nt').forEach(tab=>{
     tab.setAttribute('draggable','true');
     tab.addEventListener('click',()=>{
-      // Enregistrer la page courante dans l'historique
+      // SAUVEGARDER avant de changer d'onglet (capture le champ actif)
+      if(document.activeElement && (document.activeElement.classList.contains('njcell')||document.activeElement.classList.contains('nscell'))){
+        _handleNumCell(document.activeElement);
+      }
+      _lsSave();
       if(_currentPage && _currentPage!==tab.dataset.page){
         _navHistory.push(_currentPage);
         if(_navHistory.length>20)_navHistory.shift(); // max 20 entrées
@@ -2333,32 +2337,55 @@ function _renderAll(){
   try{ renderMatchPage(); }   catch(e){ console.error(e); }
 }
 
-// ── Écouteur cellules numérotation ──
-document.addEventListener('change', function(e){
-  var t = e.target;
-
+// ── Écouteur cellules numérotation (input+change+blur pour Safari iOS) ──
+function _handleNumCell(t){
   if(t.classList.contains('njcell')){
     var jid = t.dataset.jid, col = t.dataset.col;
     for(var k=0; k<JOUEURS.length; k++){
-      if(String(JOUEURS[k].id)===String(jid)){ JOUEURS[k].tailles[col]=t.value; break; }
+      if(String(JOUEURS[k].id)===String(jid)){
+        JOUEURS[k].tailles[col]=t.value;
+        break;
+      }
     }
-    sbSchedule();
-    return;
+    _lsSave();
+    return true;
   }
-
   if(t.classList.contains('nscell')){
     var sid=t.dataset.sid, col2=t.dataset.col, titre=t.dataset.titre;
     var lst = titre==='PRO 1'?STAFF_PRO1:titre==='PRO 2'?STAFF_PRO2:STAFF_ESPOIR;
     for(var m=0; m<lst.length; m++){
-      if(String(lst[m].id)===String(sid)){ lst[m].tailles[col2]=t.value; break; }
+      if(String(lst[m].id)===String(sid)){
+        lst[m].tailles[col2]=t.value;
+        break;
+      }
     }
-    sbSchedule();
-    return;
+    _lsSave();
+    return true;
   }
+  return false;
+}
 
+// 'input' : chaque frappe (Safari iOS ne déclenche pas toujours 'change')
+document.addEventListener('input', function(e){
+  _handleNumCell(e.target);
+});
+
+// 'change' : quand le champ perd le focus
+document.addEventListener('change', function(e){
+  var t = e.target;
+  if(_handleNumCell(t)) return;
   if(t.id==='searchInput'||t.classList.contains('fbtn')||t.classList.contains('ms')) return;
   sbSchedule();
 });
+
+// 'blur' : filet de sécurité supplémentaire quand on quitte un champ
+document.addEventListener('blur', function(e){
+  var t = e.target;
+  if(t.classList.contains('njcell') || t.classList.contains('nscell')){
+    _handleNumCell(t);
+  }
+}, true); // capture phase pour attraper tous les blurs
+
 
 // ── Patch auto-save ──
 (function(){
