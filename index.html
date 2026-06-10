@@ -298,7 +298,16 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
   </div>
   <div class="cg" id="cardsGrid"></div>
 </div>
-<div class="page" id="page-flocage"><div class="stitle">🔡 Inventaire des Flocages</div><div id="flocageContainer"></div></div>
+<div class="page" id="page-flocage">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div class="stitle" style="margin-bottom:0">🔡 Inventaire des Flocages</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-or btn-sm" onclick="expFlocCSV()">⬇ CSV</button>
+      <button class="btn btn-r btn-sm" onclick="expFlocXLSX()">⬇ Excel</button>
+    </div>
+  </div>
+  <div id="flocageContainer"></div>
+</div>
 <div class="page" id="page-match">
   <div class="stitle">⚽ Suivi Maillots Match</div>
   <div class="mc">
@@ -322,15 +331,25 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
   </div>
   <div id="numContent"></div>
 </div>
-<div class="page" id="page-alertes"><div class="stitle">🚨 Alertes Stock</div><div class="tw" id="alertesBox"></div></div>
+<div class="page" id="page-alertes">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div class="stitle" style="margin-bottom:0">🚨 Alertes Stock</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-or btn-sm" onclick="expAlertesCSV()">⬇ CSV</button>
+      <button class="btn btn-r btn-sm" onclick="expAlertesXLSX()">⬇ Excel</button>
+    </div>
+  </div>
+  <div class="tw" id="alertesBox"></div>
+</div>
 <div class="page" id="page-tableau">
   <div class="stitle">📋 Tableau Récapitulatif</div>
   <div class="tw">
     <div class="th"><span class="tt">Récapitulatif Complet</span>
       <div style="display:flex;gap:6px">
-        <button class="btn btn-or btn-sm" onclick="expCSV()">⬇ CSV</button>
-        <button class="btn btn-r btn-sm" onclick="expXLSX()">⬇ Excel</button>
-        <button class="btn btn-g btn-sm" onclick="openM('mExport')">📦 Tout</button><button class="btn btn-sm" style="background:#555;color:#fff" onclick="window.print()">🖨️ Imprimer</button>
+        <button class="btn btn-or btn-sm" onclick="expTabCSV()">⬇ CSV</button>
+        <button class="btn btn-r btn-sm" onclick="expTabXLSX()">⬇ Excel</button>
+        <button class="btn btn-g btn-sm" onclick="openM('mExport')">📦 Tout</button>
+        <button class="btn btn-sm" style="background:#555;color:#fff" onclick="window.print()">🖨️ Imprimer</button>
       </div>
     </div>
     <div class="ts"><table><thead><tr>
@@ -347,7 +366,9 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <button class="fbtn active" id="tvCal" onclick="setTodoView('cal',this)">📅 Calendrier</button>
     <button class="fbtn" id="tvList" onclick="setTodoView('list',this)">📋 Liste</button>
     <button class="btn btn-r" onclick="openTodoAdd('')">➕ Ajouter</button>
-    <button class="btn btn-or btn-sm" onclick="expTodoICS()" title="Exporter vers votre agenda téléphone (Apple, Google, etc.)">📲 Export Agenda</button>
+    <button class="btn btn-or btn-sm" onclick="expTodoICS()" title="Exporter vers votre agenda téléphone">📲 Agenda</button>
+    <button class="btn btn-or btn-sm" onclick="expTodoCSV()">⬇ CSV</button>
+    <button class="btn btn-r btn-sm" onclick="expTodoXLSX()">⬇ Excel</button>
     <div style="font-size:.7rem;font-weight:700;display:flex;gap:9px">
       <span style="color:#c0392b">● Urgent</span><span style="color:#e67e22">● Moyen</span><span style="color:#2980b9">● Faible</span>
     </div>
@@ -1390,6 +1411,27 @@ function expTodoICS(){
 }
 function expHistoCSV(){_dlCSV(_histoR().map(r=>r.join(',')).join('\n'),'historique.csv');}
 function expHistoXLSX(){_dlXLSX([{n:'Historique',r:_histoR()}],'historique.xlsx');}
+
+function _alertesR(){
+  const h=['Article','Statut','Total unités','Seuil','Valeur €','Vu'];
+  const rows=DATA.filter(a=>st(a)!=='ok').map(a=>[a.nom,st(a)==='rupture'?'Rupture':'Critique',tot(a),a.seuil,Math.round(val(a)),a.vu?'Oui':'Non']);
+  return [h,...rows];
+}
+function expAlertesCSV(){_dlCSV(_alertesR().map(r=>r.join(',')).join('\n'),'alertes.csv');}
+function expAlertesXLSX(){_dlXLSX([{n:'Alertes',r:_alertesR()}],'alertes.xlsx');}
+
+function _tabR(){
+  const h=['Article','Catégorie','Prix €','XS/38','S/39','M/40','L/41','XL/42','XXL/43','44','45','46','47','48','49','Unique','Total','Seuil','Valeur €','Statut'];
+  const rows=DATA.map(a=>{
+    const s=a.stock||{};
+    const keys=['XS','S','M','L','XL','XXL','38','39','40','41','42','43','44','45','46','47','48','49','Unique'];
+    const vals=[s['XS']||s['38']||0,s['S']||s['39']||0,s['M']||s['40']||0,s['L']||s['41']||0,s['XL']||s['42']||0,s['XXL']||s['43']||0,s['44']||0,s['45']||0,s['46']||0,s['47']||0,s['48']||0,s['49']||0,s['Unique']||0];
+    return [a.nom,CAT[a.cat]||a.cat,a.prix,...vals,tot(a),a.seuil,Math.round(val(a)),st(a)];
+  });
+  return [h,...rows];
+}
+function expTabCSV(){_dlCSV(_tabR().map(r=>r.join(',')).join('\n'),'tableau.csv');}
+function expTabXLSX(){_dlXLSX([{n:'Tableau',r:_tabR()}],'tableau.xlsx');}
 function expAllXLSX(){_dlXLSX([{n:'Inventaire',r:_invR()},{n:'Match',r:_matchR()},{n:'Joueurs',r:_numJR()},{n:'Staff PRO',r:_numS1R()},{n:'Staff ELITE',r:_numS2R()},{n:'Staff ESPOIR',r:_numSER()},{n:'Flocage',r:_flocR()},{n:'Todo',r:_todoR()},{n:'Historique',r:_histoR()}],'SDR_complet.xlsx');}
 
 // ════ NUMÉROTATION ════
@@ -1410,7 +1452,7 @@ function renderNumJ(cont,list,title){
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=[...list].sort((a,b)=>a.num-b.num).map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
@@ -1426,7 +1468,7 @@ function renderNumTous(cont){
   const rows=list.map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
     const bg=j.groupe==='Prêt'?'background:#f8fff8;':'';
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px;'+bg+'"><input class="nce" value="'+(j.tailles[c]||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="—"></td><td style="padding:3px 4px;'+bg+'"><input class="nce nb" value="'+(j.tailles[c+'_nb']||'')+'" onchange="JOUEURS.find(x=>x.id===\''+j.id+'\').tailles[\''+c+'_nb\']=this.value;_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="0"></td>';}).join('');
     return '<tr><td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')" >'+j.num+'</td><td style="cursor:pointer;white-space:nowrap" onclick="openJoueurEdit(\''+j.id+'\')" ><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'+cells+'</tr>';
   }).join('');
   cont.innerHTML='<div style="background:#f0fff4;border:2px solid #27ae60;border-radius:9px;padding:8px 13px;margin-bottom:13px;font-size:.73rem;font-weight:700;color:#155724">🌍 Vue consolidée — données en direct depuis les tableaux PRO, ELITE &amp; ESPOIR. <span class="nbp1">PRO</span> <span class="nbp2">ELITE</span> <span class="nbespoir">ESPOIR</span> <span class="nbpt">Prêt</span></div>'
@@ -1442,7 +1484,7 @@ function renderNumS(cont,list,title){
   const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="customColsS['+i+']=this.value;renderNumerotation();clearTimeout(_saveTimer);sbSave()" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(s){
-    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');clearTimeout(_saveTimer);_saveTimer=setTimeout(sbSave,300)" placeholder="0"></td>';}).join('');
+    const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce" value="'+(s.tailles[c]||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'\',this.value,\''+title+'\');_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb" value="'+(s.tailles[c+'_nb']||'')+'" onchange="updateStaff(\''+s.id+'\',\''+c+'_nb\',this.value,\''+title+'\');_lsSave();clearTimeout(_saveTimer);_saveTimer=setTimeout(_jbSave,1500)" placeholder="0"></td>';}).join('');
     return '<tr>'
     +'<td style="font-family:\'Bebas Neue\',sans-serif;color:var(--r);cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')">'+s.initiales+'</td>'
     +'<td style="white-space:nowrap;cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')"><span style="font-weight:800">'+s.nom+'</span></td>'
@@ -1561,8 +1603,9 @@ function saveJoueur(){
   }
   closeM('mJoueur');
   renderNumerotation();
+  _lsSave();
   clearTimeout(_saveTimer);
-  sbSave();
+  _saveTimer=setTimeout(_jbSave,1500);
 }
 
 function deleteJoueur(){
@@ -1570,8 +1613,9 @@ function deleteJoueur(){
   JOUEURS=JOUEURS.filter(x=>x.id!==editingJoueurId);
   closeM('mJoueur');
   renderNumerotation();
+  _lsSave();
   clearTimeout(_saveTimer);
-  sbSave();
+  _saveTimer=setTimeout(_jbSave,1500);
 }
 
 // ─── Staff modal helpers ───
@@ -1628,8 +1672,9 @@ function saveStaff(){
   }
   closeM('mStaff');
   renderNumerotation();
+  _lsSave();
   clearTimeout(_saveTimer);
-  sbSave();
+  _saveTimer=setTimeout(_jbSave,1500);
 }
 
 function deleteStaff(){
@@ -1639,8 +1684,9 @@ function deleteStaff(){
   STAFF_ESPOIR=STAFF_ESPOIR.filter(x=>x.id!==editingStaffId);
   closeM('mStaff');
   renderNumerotation();
+  _lsSave();
   clearTimeout(_saveTimer);
-  sbSave();
+  _saveTimer=setTimeout(_jbSave,1500);
 }
 
 // ════ FLOCAGE ════
@@ -1984,174 +2030,122 @@ function showStartupAlert(){
   openM('mStartup');
 }
 
-// ════ SYNC — localStorage (principal) + JSONBin (backup) ════
+// ════════════════════════════════════════════════════════
+//  SYNC — localStorage (primaire) + JSONBin (cloud backup)
+// ════════════════════════════════════════════════════════
 const JBIN_ACCESS = '$2a$10$TrOcg3kWnwSBrkVDJKFuE.mZHtDNhRbHh.rI/x5ZTxY6XJ67tpGd6';
-const JBIN_MASTER = '$2a$10$/pLXUSkPWImBGzVeEb5Cte2oqm8cNvKisGdue1VGf0d0RkFa93bPe';
 const JBIN_ID     = '6a1edd52f5f4af5e29ad346f';
-const LS_KEY      = 'sdr_data_v2';
+const LS_KEY      = 'sdr_v3';
 
-let _saveTimer  = null;
-let _saving     = false;
-let _savingAt   = 0;
-let _pendingSave= false;
+let _jbTimer = null;
+let _jbBusy  = false;
+let _jbAt    = 0;
 
-function _showToast(msg){
+// ── UI helpers ──
+function _showToast(msg,dur=3500){
   let t=document.getElementById('sbToast');
   if(!t){t=document.createElement('div');t.id='sbToast';
-  t.style.cssText='position:fixed;bottom:80px;right:18px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.78rem;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;max-width:280px;box-shadow:0 4px 16px rgba(0,0,0,.3)';
-  document.body.appendChild(t);}
+    t.style.cssText='position:fixed;bottom:80px;right:18px;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:.78rem;font-weight:700;z-index:9999;opacity:0;transition:opacity .3s;max-width:300px;box-shadow:0 4px 16px rgba(0,0,0,.3)';
+    document.body.appendChild(t);}
   t.textContent=msg;t.style.opacity='1';
-  clearTimeout(t._timer);t._timer=setTimeout(()=>t.style.opacity='0',3500);
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',dur);
 }
-
 function _addSyncDot(){
   const hi=document.querySelector('.hi');
   if(!hi||document.getElementById('syncDot'))return;
   const d=document.createElement('div');d.id='syncDot';
-  d.style.cssText='width:11px;height:11px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .3s';
-  d.title='Synchronisation';hi.appendChild(d);
+  d.style.cssText='width:11px;height:11px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .4s';
+  hi.appendChild(d);
 }
-function _syncStatus(s){
-  const d=document.getElementById('syncDot');if(!d)return;
-  d.style.background={ok:'#27ae60',saving:'#e67e22',error:'#e67e22',off:'#aaa'}[s]||'#aaa';
-}
-function _markDirty(){
-  _pendingSave=true;
-  const btn=document.getElementById('saveBtnIcon');
-  if(btn&&btn.textContent==='💾')btn.textContent='💾*';
-}
-function _markClean(){
-  _pendingSave=false;
-  const btn=document.getElementById('saveBtnIcon');
-  if(btn)btn.textContent='💾';
-}
+function _dot(s){const d=document.getElementById('syncDot');if(d)d.style.background={ok:'#27ae60',saving:'#e67e22',err:'#c0392b',off:'#aaa'}[s]||'#aaa';}
+function _btnIcon(ic){const b=document.getElementById('saveBtnIcon');if(b)b.textContent=ic;}
 
+// ── Données ──
 function _getState(){
-  return {DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,customColsJ,customColsS,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
+  return {v:3,DATA,FLOCAGE,JOUEURS,STAFF_PRO1,STAFF_PRO2,STAFF_ESPOIR,CAT,customColsJ,customColsS,MATCHS,TODOS,HISTORIQUE,ts:Date.now()};
 }
-
 function _applyState(s){
   if(!s||!s.DATA)return false;
-  if(s.DATA)        DATA        =s.DATA;
-  if(s.FLOCAGE)     FLOCAGE     =s.FLOCAGE;
-  if(s.JOUEURS)     JOUEURS     =s.JOUEURS;
-  if(s.STAFF_PRO1)  STAFF_PRO1  =s.STAFF_PRO1;
-  if(s.STAFF_PRO2)  STAFF_PRO2  =s.STAFF_PRO2;
-  if(s.STAFF_ESPOIR)STAFF_ESPOIR=s.STAFF_ESPOIR;
-  if(s.CAT)         CAT         =s.CAT;
-  if(s.customColsJ) customColsJ =s.customColsJ;
-  if(s.customColsS) customColsS =s.customColsS;
-  if(s.MATCHS)      MATCHS      =s.MATCHS;
-  if(s.TODOS)       TODOS       =s.TODOS;
-  if(s.HISTORIQUE)  HISTORIQUE  =s.HISTORIQUE;
+  DATA=s.DATA; FLOCAGE=s.FLOCAGE||FLOCAGE; JOUEURS=s.JOUEURS||JOUEURS;
+  STAFF_PRO1=s.STAFF_PRO1||STAFF_PRO1; STAFF_PRO2=s.STAFF_PRO2||STAFF_PRO2;
+  STAFF_ESPOIR=s.STAFF_ESPOIR||STAFF_ESPOIR; CAT=s.CAT||CAT;
+  if(s.customColsJ) customColsJ=s.customColsJ;
+  if(s.customColsS) customColsS=s.customColsS;
+  MATCHS=s.MATCHS||MATCHS; TODOS=s.TODOS||TODOS; HISTORIQUE=s.HISTORIQUE||HISTORIQUE;
   return true;
 }
 
-// ── SAUVEGARDE LOCALE (instantanée, toujours disponible) ──
+// ── localStorage (PRIMAIRE — toujours fiable) ──
 function _lsSave(){
-  try{
-    localStorage.setItem(LS_KEY, JSON.stringify(_getState()));
-    return true;
-  }catch(e){return false;}
+  try{localStorage.setItem(LS_KEY,JSON.stringify(_getState()));return true;}catch(e){return false;}
 }
-
 function _lsLoad(){
-  try{
-    const raw=localStorage.getItem(LS_KEY);
-    if(!raw)return false;
-    const s=JSON.parse(raw);
-    return _applyState(s);
-  }catch(e){return false;}
+  try{const r=localStorage.getItem(LS_KEY);if(!r)return false;return _applyState(JSON.parse(r));}catch(e){return false;}
 }
 
-// ── SAUVEGARDE JSONBIN (async, backup cloud) ──
+// ── JSONBin (BACKUP cloud) ──
 async function _jbSave(){
-  if(_saving && Date.now()-_savingAt>8000) _saving=false;
-  if(_saving)return;
-  _saving=true; _savingAt=Date.now(); _syncStatus('saving');
+  if(_jbBusy&&Date.now()-_jbAt<8000)return;
+  _jbBusy=true;_jbAt=Date.now();_dot('saving');
   try{
-    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID,{
-      method:'PUT',
+    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID,{method:'PUT',
       headers:{'Content-Type':'application/json','X-Access-Key':JBIN_ACCESS},
-      body:JSON.stringify(_getState())
-    });
-    _syncStatus(r.ok?'ok':'error');
-    if(r.ok)_markClean();
-  }catch(e){_syncStatus('error');}
-  _saving=false;
+      body:JSON.stringify(_getState())});
+    _dot(r.ok?'ok':'err');
+  }catch(e){_dot('err');}
+  _jbBusy=false;
 }
-
 async function _jbLoad(){
   try{
-    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{
-      headers:{'X-Access-Key':JBIN_ACCESS}
-    });
+    const r=await fetch('https://api.jsonbin.io/v3/b/'+JBIN_ID+'/latest',{headers:{'X-Access-Key':JBIN_ACCESS}});
     if(!r.ok)return false;
-    const d=await r.json();
-    return _applyState(d.record);
+    const d=await r.json();return _applyState(d.record);
   }catch(e){return false;}
 }
 
-// ── API PUBLIQUE ──
+// ── API publique ──
+// Sauvegarde IMMÉDIATE en local + cloud en diff
+function sbSchedule(){
+  _lsSave(); // LOCAL = immédiat, garantie 100%
+  _btnIcon('💾*');
+  clearTimeout(_jbTimer);
+  _jbTimer=setTimeout(()=>{_jbSave();_btnIcon('💾');},2000);
+}
+
 async function sbSave(){
-  // 1. Sauvegarde locale immédiate (ne peut pas échouer)
   _lsSave();
-  _markClean();
-  _syncStatus('saving');
-  // 2. Backup cloud en arrière-plan
+  _btnIcon('💾');
   await _jbSave();
 }
 
-function sbSchedule(){
-  _markDirty();
-  // Sauvegarde locale immédiate
-  _lsSave();
-  // Cloud avec délai court
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_jbSave, 1500);
-}
-
 async function sbLoad(){
-  // 1. Essayer JSONBin d'abord (données les plus récentes)
-  const jbOk = await _jbLoad();
-  if(jbOk){
-    // Mettre à jour le localStorage avec les données du cloud
-    _lsSave();
-    _syncStatus('ok');
-    return true;
-  }
-  // 2. Fallback sur localStorage si JSONBin échoue
-  const lsOk = _lsLoad();
-  if(lsOk){
-    _syncStatus('ok');
-    _showToast('⚠️ Mode local — données du localStorage');
-    return true;
-  }
-  _syncStatus('off');
+  // Essayer cloud en premier (plus récent), sinon local
+  const jbOk=await _jbLoad();
+  if(jbOk){_lsSave();_dot('ok');return true;}
+  const lsOk=_lsLoad();
+  if(lsOk){_dot('ok');return true;}
   return false;
 }
 
 async function manuSave(){
-  const btn=document.getElementById('saveBtnIcon');
-  btn.textContent='⏳';
-  _lsSave(); // Sauvegarde locale instantanée
+  _btnIcon('⏳');
+  _lsSave();
+  _dot('saving');
   try{
-    _saving=false;
+    _jbBusy=false;
     await _jbSave();
-    btn.textContent='✅';
-    setTimeout(()=>btn.textContent='💾',3000);
+    _btnIcon('✅');
     _showToast('✅ Données enregistrées !');
-  }catch(e){
-    btn.textContent='❌';
-    setTimeout(()=>btn.textContent='💾',2000);
-  }
+    setTimeout(()=>_btnIcon('💾'),2500);
+  }catch(e){_btnIcon('❌');setTimeout(()=>_btnIcon('💾'),2000);}
 }
 
-// Sauvegarde à la fermeture
-window.addEventListener('beforeunload',function(){
-  _lsSave(); // localStorage toujours disponible à la fermeture
-});
+// Sauvegarde locale garantie à la fermeture
+window.addEventListener('beforeunload',()=>_lsSave());
+window.addEventListener('pagehide',()=>_lsSave());
+window.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_lsSave();});
 
+// ── Render all ──
 function _renderAll(){
   try{renderFilterBtns();}catch(e){}
   try{renderCards();}catch(e){}
@@ -2163,48 +2157,49 @@ function _renderAll(){
   try{renderMatchPage();}catch(e){}
 }
 
+// ── Patch auto-save sur toutes les fonctions de modification ──
 (function(){
   const fns=['creerArticle','saveStock','confirmDelete','saveAttrib',
-    'creerFlocage','saveFlocEdit','deleteFlocage','saveJoueur','deleteJoueur',
-    'saveStaff','deleteStaff','saveMatch','deleteMatch','cycleCell',
-    'updMCom','setRes','updMHead','saveTodo','deleteTodo','toggleTodo','toggleVu',
-    'toggleGroupMatchSel','selectAllMatch','clearMatchSel','editSeuil',
-    'validerSelection','removePhoto','ajoutColJ','ajoutColS','suppColJ','suppColS'];
+    'creerFlocage','saveFlocEdit','deleteFlocage','saveFlocAttrib',
+    'saveJoueur','deleteJoueur','saveStaff','deleteStaff',
+    'saveMatch','deleteMatch','cycleCell','updMCom','setRes','updMHead',
+    'saveTodo','deleteTodo','toggleTodo','toggleVu','editSeuil',
+    'toggleGroupMatchSel','selectAllMatch','clearMatchSel',
+    'validerSelection','removePhoto','ajoutColJ','ajoutColS','suppColJ','suppColS',
+    'renameCat','addCat','deleteCat'];
   fns.forEach(name=>{
     if(typeof window[name]==='function'){
       const orig=window[name];
-      window[name]=function(...args){
-        const r=orig.apply(this,args);
-        sbSchedule();
-        return r;
-      };
+      window[name]=function(...a){const r=orig.apply(this,a);sbSchedule();return r;};
     }
   });
 })();
 
+// Filet de sécurité global sur tout changement de champ
 document.addEventListener('change',function(e){
   const t=e.target;
-  if(t.id==='searchInput'||t.classList.contains('fbtn'))return;
+  if(t.id==='searchInput'||t.classList.contains('fbtn')||t.classList.contains('ms'))return;
   sbSchedule();
 });
 
-// ════ INIT ════
+// ── INIT ──
 try{_addSyncDot();}catch(e){}
 try{renderFilterBtns();}catch(e){}
-try{renderCards();}catch(e){document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur: '+e.message+'</h2>';}
+try{renderCards();}catch(e){document.body.innerHTML='<h2 style="padding:20px;color:red">Erreur init: '+e.message+'</h2>';}
 try{showStartupAlert();}catch(e){}
 
 setTimeout(async function(){
   _showToast('⏳ Chargement...');
-  const ok = await sbLoad();
+  const ok=await sbLoad();
+  _renderAll();
   if(ok){
-    _renderAll();
+    _lsSave();
     _showToast('✅ Données chargées');
   } else {
-    _showToast('⚠️ Aucune donnée trouvée — mode initial');
-    await sbSave();
+    _lsSave(); // Sauvegarder les données par défaut
+    _showToast('✅ Prêt');
   }
-}, 300);
+},300);
 
 </script>
 </body>
