@@ -322,6 +322,9 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
       <div class="hs-i" onclick="importBackup()" style="cursor:pointer;background:rgba(255,255,255,.12)" title="Restaurer depuis un backup">
         <div class="hs-n">📥</div><div class="hs-l">Import</div>
       </div>
+      <div class="hs-i" onclick="openReorder()" style="cursor:pointer;background:rgba(255,255,255,.12)" title="Réorganiser l'ordre des onglets">
+        <div class="hs-n">🔀</div><div class="hs-l">Onglets</div>
+      </div>
       <div class="hs-i" id="backBtn" onclick="goBack()" style="cursor:pointer;background:rgba(255,255,255,.12)" title="Retour à la page précédente">
         <div class="hs-n">◀</div><div class="hs-l">Retour</div>
       </div>
@@ -332,11 +335,19 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <div class="nt" data-page="flocage">🔡 Flocage</div>
     <div class="nt" data-page="match">⚽ Match</div>
     <div class="nt" data-page="numerotation">📐 Numérotation</div>
+    <div class="nt" data-page="dotations">📦 Dotations</div>
     <div class="nt" data-page="alertes">🚨 Alertes</div>
     <div class="nt" data-page="tableau">📋 Tableau</div>
     <div class="nt" data-page="todo">📅 To Do List</div>
   </nav>
 </header>
+
+<div class="overlay hidden" id="mReorder"><div class="modal" style="max-width:420px">
+  <div class="mtitle">🔀 Réorganiser les onglets</div>
+  <p style="font-size:.72rem;color:#777;margin:-4px 0 12px">Utilisez les flèches pour changer l'ordre d'affichage des onglets.</p>
+  <div id="reorderList" style="margin-bottom:13px"></div>
+  <div class="mfooter"><button class="btn btn-g" style="flex:1" onclick="closeM('mReorder')">Fermer</button></div>
+</div></div>
 
 <button class="fab" id="fabBtn" onclick="_fillCatSelect('aCat','');openM('mAjout')">＋</button>
 
@@ -380,6 +391,22 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
     <button class="nsb" onclick="showNumTab('staff-espoir',this)">👔 Staff ESPOIR</button>
   </div>
   <div id="numContent"></div>
+</div>
+<div class="page" id="page-dotations">
+  <div class="stitle">📦 Dotations</div>
+  <div class="num-sub">
+    <button class="nsb active" id="dotaTabReception" onclick="showDotaSection('reception',this)">📦 Réception Livraison</button>
+    <button class="nsb" id="dotaTabDistrib" onclick="showDotaSection('distribution',this)">📋 Distribution Équipements</button>
+  </div>
+  <div class="num-sub" id="dotaGroupTabs" style="display:none">
+    <button class="nsb active" onclick="showDistribGroup('PRO 1',this)">⚽ Joueurs PRO</button>
+    <button class="nsb" onclick="showDistribGroup('PRO 2',this)">⚽ Joueurs ELITE</button>
+    <button class="nsb" onclick="showDistribGroup('ESPOIR',this)">⚽ Joueurs ESPOIR</button>
+    <button class="nsb" onclick="showDistribGroup('STAFF_PRO1',this)">👔 Staff PRO</button>
+    <button class="nsb" onclick="showDistribGroup('STAFF_PRO2',this)">👔 Staff ELITE</button>
+    <button class="nsb" onclick="showDistribGroup('STAFF_ESPOIR',this)">👔 Staff ESPOIR</button>
+  </div>
+  <div id="dotaContent"></div>
 </div>
 <div class="page" id="page-alertes">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -923,6 +950,12 @@ let matchNextId=2,currentMatchId='m1',editingMatchId=null;
 let TODOS=[],todoNextId=1,editingTodoId=null,todoView='cal',todoDate=new Date();
 let HISTORIQUE=[],activeFilter='tous',editId=null,deleteId=null,editFlocId=null,editingJoueurId=null;
 let customColsJ=[...NUM_COLS_J],customColsS=[...NUM_COLS_S],currentNumTab='pro1';
+let DOTA_RECEPTION={};
+let DOTA_DISTRIB={'PRO 1':{},'PRO 2':{},'ESPOIR':{},'STAFF_PRO1':{},'STAFF_PRO2':{},'STAFF_ESPOIR':{}};
+let DOTA_EXTRA_RECEPTION=[];
+let DOTA_EXTRA_DISTRIB={'PRO 1':[],'PRO 2':[],'ESPOIR':[],'STAFF_PRO1':[],'STAFF_PRO2':[],'STAFF_ESPOIR':[]};
+let _dotaExtraNextId=1;
+let dotaSection='reception', dotaGroup='PRO 1';
 let _popHandler=null;
 
 // ════ UTILS ════
@@ -1081,6 +1114,7 @@ function goBack(){
     if(prev==='alertes')renderAlertes();
     if(prev==='flocage')renderFlocage();
     if(prev==='numerotation')renderNumerotation();
+    if(prev==='dotations')renderDotations();
     if(prev==='match')renderMatchPage();
     if(prev==='todo')renderTodo();
   }
@@ -1102,7 +1136,7 @@ function goPage(pid){
     tab.addEventListener('click',()=>{
       // SAUVEGARDER avant de changer d'onglet (capture le champ actif)
       if(document.activeElement && (document.activeElement.classList.contains('njcell')||document.activeElement.classList.contains('nscell'))){
-        _handleNumCell(document.activeElement);
+        _handleCell(document.activeElement);
       }
       _lsSave();
       if(_currentPage && _currentPage!==tab.dataset.page){
@@ -1121,6 +1155,7 @@ function goPage(pid){
       if(pg2==='alertes')renderAlertes();
       if(pg2==='flocage')renderFlocage();
       if(pg2==='numerotation')renderNumerotation();
+      if(pg2==='dotations')renderDotations();
       if(pg2==='match')renderMatchPage();
       if(pg2==='todo')renderTodo();
     });
@@ -1128,9 +1163,58 @@ function goPage(pid){
     tab.addEventListener('dragend',()=>{drag=null;tab.style.opacity='1';nav.querySelectorAll('.nt').forEach(t=>t.style.borderLeft='');});
     tab.addEventListener('dragover',e=>{e.preventDefault();if(tab!==drag)tab.style.borderLeft='3px solid var(--or)';});
     tab.addEventListener('dragleave',()=>tab.style.borderLeft='');
-    tab.addEventListener('drop',e=>{e.preventDefault();tab.style.borderLeft='';if(drag&&tab!==drag){const tabs=[...nav.children];const fi=tabs.indexOf(drag),ti=tabs.indexOf(tab);nav.insertBefore(drag,fi<ti?tab.nextSibling:tab);}});
+    tab.addEventListener('drop',e=>{e.preventDefault();tab.style.borderLeft='';if(drag&&tab!==drag){const tabs=[...nav.children];const fi=tabs.indexOf(drag),ti=tabs.indexOf(tab);nav.insertBefore(drag,fi<ti?tab.nextSibling:tab);_syncTabOrderFromDOM();}});
   });
 })();
+
+// ════ RÉORGANISATION DES ONGLETS (persistant, tactile sur iPhone) ════
+const DEFAULT_TAB_ORDER=['inventaire','flocage','match','numerotation','dotations','alertes','tableau','todo'];
+let TAB_ORDER=[...DEFAULT_TAB_ORDER];
+
+function _applyTabOrder(){
+  const nav=document.getElementById('navTabs');
+  if(!nav)return;
+  TAB_ORDER.forEach(function(pid){
+    const el=nav.querySelector('.nt[data-page="'+pid+'"]');
+    if(el)nav.appendChild(el);
+  });
+}
+function _syncTabOrderFromDOM(){
+  const nav=document.getElementById('navTabs');
+  if(!nav)return;
+  TAB_ORDER=[...nav.querySelectorAll('.nt')].map(el=>el.dataset.page);
+  sbSchedule();
+}
+function _tabLabel(pid){
+  const el=document.querySelector('.nt[data-page="'+pid+'"]');
+  return el?el.textContent.trim():pid;
+}
+function openReorder(){
+  renderReorderList();
+  openM('mReorder');
+}
+function renderReorderList(){
+  const box=document.getElementById('reorderList');
+  box.innerHTML=TAB_ORDER.map(function(pid,idx){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f8f8f8;border-radius:8px;margin-bottom:6px">'
+      +'<span style="flex:1;font-weight:700;font-size:.82rem">'+_tabLabel(pid)+'</span>'
+      +'<button onclick="moveTab(\''+pid+'\',-1)" '+(idx===0?'disabled style="opacity:.3;background:#fff;border:1px solid #ddd;border-radius:6px;width:36px;height:36px;font-size:1.1rem"':'style="background:#fff;border:1px solid #ddd;border-radius:6px;width:36px;height:36px;font-size:1.1rem;cursor:pointer"')+'>▲</button>'
+      +'<button onclick="moveTab(\''+pid+'\',1)" '+(idx===TAB_ORDER.length-1?'disabled style="opacity:.3;background:#fff;border:1px solid #ddd;border-radius:6px;width:36px;height:36px;font-size:1.1rem"':'style="background:#fff;border:1px solid #ddd;border-radius:6px;width:36px;height:36px;font-size:1.1rem;cursor:pointer"')+'>▼</button>'
+      +'</div>';
+  }).join('');
+}
+function moveTab(pid,dir){
+  const idx=TAB_ORDER.indexOf(pid);
+  if(idx<0)return;
+  const newIdx=idx+dir;
+  if(newIdx<0||newIdx>=TAB_ORDER.length)return;
+  const tmp=TAB_ORDER[newIdx];
+  TAB_ORDER[newIdx]=TAB_ORDER[idx];
+  TAB_ORDER[idx]=tmp;
+  _applyTabOrder();
+  renderReorderList();
+  sbSchedule();
+}
 
 
 // ════ INLINE POPOVER ════
@@ -1486,7 +1570,262 @@ function _tabR(){
 }
 function expTabCSV(){_dlCSV(_tabR().map(r=>r.join(',')).join('\n'),'tableau.csv');}
 function expTabXLSX(){_dlXLSX([{n:'Tableau',r:_tabR()}],'tableau.xlsx');}
-function expAllXLSX(){_dlXLSX([{n:'Inventaire',r:_invR()},{n:'Match',r:_matchR()},{n:'Joueurs',r:_numJR()},{n:'Staff PRO',r:_numS1R()},{n:'Staff ELITE',r:_numS2R()},{n:'Staff ESPOIR',r:_numSER()},{n:'Flocage',r:_flocR()},{n:'Todo',r:_todoR()},{n:'Historique',r:_histoR()}],'SDR_complet.xlsx');}
+function expAllXLSX(){_dlXLSX([{n:'Inventaire',r:_invR()},{n:'Match',r:_matchR()},{n:'Joueurs',r:_numJR()},{n:'Staff PRO',r:_numS1R()},{n:'Staff ELITE',r:_numS2R()},{n:'Staff ESPOIR',r:_numSER()},{n:'Flocage',r:_flocR()},{n:'Réception',r:_dotaReceptionR()},{n:'Todo',r:_todoR()},{n:'Historique',r:_histoR()}],'SDR_complet.xlsx');}
+
+// ════ DOTATIONS ════
+function _groupLabelDisplay(g){
+  return {'PRO 1':'⚽ Joueurs PRO','PRO 2':'⚽ Joueurs ELITE','ESPOIR':'⚽ Joueurs ESPOIR',
+    'STAFF_PRO1':'👔 Staff PRO','STAFF_PRO2':'👔 Staff ELITE','STAFF_ESPOIR':'👔 Staff ESPOIR'}[g] || g;
+}
+
+function _articlesByCat(){
+  const order=Object.keys(CAT);
+  const groups={};
+  order.forEach(k=>groups[k]=[]);
+  DATA.forEach(a=>{
+    const k=CAT[a.cat]?a.cat:'accessoire';
+    if(!groups[k])groups[k]=[];
+    groups[k].push(a);
+  });
+  return {order,groups};
+}
+
+// Préserve la position de scroll du tableau (et de la page) autour d'un re-rendu complet
+function _dotaScrollSafe(fn){
+  const nts=document.querySelector('#dotaContent .nts');
+  const top=nts?nts.scrollTop:0;
+  const winY=window.scrollY||document.documentElement.scrollTop||0;
+  fn();
+  const nts2=document.querySelector('#dotaContent .nts');
+  if(nts2)nts2.scrollTop=top;
+  window.scrollTo(0,winY);
+}
+
+function showDotaSection(sec,el){
+  dotaSection=sec;
+  document.getElementById('dotaTabReception').classList.toggle('active',sec==='reception');
+  document.getElementById('dotaTabDistrib').classList.toggle('active',sec==='distribution');
+  document.getElementById('dotaGroupTabs').style.display=sec==='distribution'?'flex':'none';
+  renderDotations();
+}
+function showDistribGroup(group,el){
+  dotaGroup=group;
+  document.querySelectorAll('#dotaGroupTabs .nsb').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderDotations();
+}
+function renderDotations(){
+  const cont=document.getElementById('dotaContent');
+  if(!cont)return;
+  if(dotaSection==='reception') renderDotaReception(cont);
+  else renderDotaDistribution(cont,dotaGroup);
+}
+
+// ── Réception Livraison ──
+// Trouve (ou crée) l'objet de données pour un article — qu'il vienne de l'inventaire ou soit une ligne ajoutée manuellement
+function _recDataFor(aid){
+  for(let i=0;i<DOTA_EXTRA_RECEPTION.length;i++){
+    if(String(DOTA_EXTRA_RECEPTION[i].id)===String(aid)) return DOTA_EXTRA_RECEPTION[i];
+  }
+  if(!DOTA_RECEPTION[aid])DOTA_RECEPTION[aid]={commande:0,recu:0};
+  return DOTA_RECEPTION[aid];
+}
+function _recStatus(aid){
+  const d=_recDataFor(aid);
+  const commande=+d.commande||0, recu=+d.recu||0;
+  if(commande<=0) return {label:'—',bg:'#f3f3f3',color:'#999'};
+  if(recu<=0) return {label:'❌ Non reçu',bg:'#f8d7da',color:'#721c24'};
+  if(recu>=commande) return {label:'✅ Reçu',bg:'#d4edda',color:'#155724'};
+  return {label:'🟧 '+recu+' / '+commande,bg:'#fde9d0',color:'#8a5a00'};
+}
+function updateRecStatus(aid){
+  const cell=document.getElementById('recStatusCell_'+aid);
+  const label=document.getElementById('recStatusLabel_'+aid);
+  if(!cell||!label)return;
+  const s=_recStatus(aid);
+  cell.style.background=s.bg;
+  label.style.color=s.color;
+  label.textContent=s.label;
+}
+function addExtraReception(){
+  const id='ex'+(_dotaExtraNextId++);
+  DOTA_EXTRA_RECEPTION.push({id,nom:'',commande:0,recu:0});
+  _dotaScrollSafe(()=>renderDotaReception(document.getElementById('dotaContent')));
+  sbSchedule();
+  setTimeout(()=>{
+    const el=document.querySelector('.doRecExtraName[data-aid="'+id+'"]');
+    if(el){el.focus();el.scrollIntoView({block:'center',behavior:'smooth'});}
+  },80);
+}
+function deleteExtraReception(id){
+  if(!confirm('Supprimer cette ligne ?'))return;
+  DOTA_EXTRA_RECEPTION=DOTA_EXTRA_RECEPTION.filter(e=>String(e.id)!==String(id));
+  _dotaScrollSafe(()=>renderDotaReception(document.getElementById('dotaContent')));
+  sbSchedule();
+}
+function renderDotaReception(cont){
+  const {order,groups}=_articlesByCat();
+  let rows='';
+  order.forEach(function(catKey){
+    const arts=groups[catKey];
+    if(!arts||!arts.length)return;
+    rows+='<tr style="background:#f3f3f3"><td colspan="3" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">'
+      +CAT[catKey]+' <span style="font-size:.6rem;opacity:.6;font-weight:700">('+arts.length+')</span></td></tr>';
+    arts.forEach(function(a){
+      const d=_recDataFor(a.id);
+      const s=_recStatus(a.id);
+      rows+='<tr>'
+        +'<td style="white-space:nowrap;padding:6px 10px"><span style="margin-right:6px">'+(a.icon||'📦')+'</span><span style="font-weight:700">'+a.nom+'</span></td>'
+        +'<td style="text-align:center;padding:6px"><input type="number" min="0" class="nce doRecCom" data-aid="'+a.id+'" value="'+(d.commande||0)+'" style="width:78px;text-align:center"></td>'
+        +'<td id="recStatusCell_'+a.id+'" style="text-align:center;padding:6px;background:'+s.bg+'"><input type="number" min="0" class="nce doRecRecu" data-aid="'+a.id+'" value="'+(d.recu||0)+'" style="width:78px;text-align:center;background:transparent;font-weight:800"><div id="recStatusLabel_'+a.id+'" style="font-size:.62rem;font-weight:800;color:'+s.color+';margin-top:3px">'+s.label+'</div></td>'
+        +'</tr>';
+    });
+  });
+  if(DOTA_EXTRA_RECEPTION.length){
+    rows+='<tr style="background:#fff7e6"><td colspan="3" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">✏️ Articles ajoutés manuellement <span style="font-size:.6rem;opacity:.6;font-weight:700">('+DOTA_EXTRA_RECEPTION.length+')</span></td></tr>';
+    DOTA_EXTRA_RECEPTION.forEach(function(e){
+      const s=_recStatus(e.id);
+      rows+='<tr>'
+        +'<td style="padding:6px 10px"><input type="text" class="nce doRecExtraName" data-aid="'+e.id+'" value="'+(e.nom||'').replace(/"/g,'&quot;')+'" placeholder="Nom de l\'article" style="width:100%;font-weight:700"></td>'
+        +'<td style="text-align:center;padding:6px"><input type="number" min="0" class="nce doRecCom" data-aid="'+e.id+'" value="'+(e.commande||0)+'" style="width:78px;text-align:center"></td>'
+        +'<td id="recStatusCell_'+e.id+'" style="text-align:center;padding:6px;background:'+s.bg+'">'
+          +'<input type="number" min="0" class="nce doRecRecu" data-aid="'+e.id+'" value="'+(e.recu||0)+'" style="width:60px;text-align:center;background:transparent;font-weight:800">'
+          +'<button onclick="deleteExtraReception(\''+e.id+'\')" title="Supprimer cette ligne" style="margin-left:6px;background:none;border:none;color:#c0392b;cursor:pointer;font-size:.9rem;vertical-align:middle">🗑</button>'
+          +'<div id="recStatusLabel_'+e.id+'" style="font-size:.62rem;font-weight:800;color:'+s.color+';margin-top:3px">'+s.label+'</div></td>'
+        +'</tr>';
+    });
+  }
+  cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">📦 Réception Livraison</span>'
+    +'<div style="display:flex;gap:6px"><button class="btn btn-or btn-sm" onclick="addExtraReception()">➕ Ligne</button><button class="btn btn-r btn-sm" onclick="expDotaReceptionXLSX()">⬇ Excel</button></div></div>'
+    +'<div class="nts"><table class="ntbl"><thead><tr><th style="min-width:230px">Article</th><th style="min-width:110px">Commandé</th><th style="min-width:150px">Reçu</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
+
+// ── Distribution des équipements ──
+function _distExtraList(group){
+  if(!DOTA_EXTRA_DISTRIB[group])DOTA_EXTRA_DISTRIB[group]=[];
+  return DOTA_EXTRA_DISTRIB[group];
+}
+// Trouve (ou crée) l'objet de données pour un article — inventaire ou ligne ajoutée manuellement
+function _distDataFor(group,aid){
+  const extras=_distExtraList(group);
+  for(let i=0;i<extras.length;i++){
+    if(String(extras[i].id)===String(aid)) return extras[i];
+  }
+  if(!DOTA_DISTRIB[group])DOTA_DISTRIB[group]={};
+  if(!DOTA_DISTRIB[group][aid])DOTA_DISTRIB[group][aid]={check:null,note:'',qty:0};
+  return DOTA_DISTRIB[group][aid];
+}
+function _distribBtnId(prefix,group,aid){
+  return prefix+'_'+String(group).replace(/[^a-zA-Z0-9]/g,'_')+'_'+String(aid).replace(/[^a-zA-Z0-9]/g,'_');
+}
+// Met à jour seulement les 2 boutons concernés — pas de re-rendu du tableau, donc pas de saut de scroll
+function _updateDistribBtns(group,aid){
+  const d=_distDataFor(group,aid);
+  const isOk=d.check==='ok', isKo=d.check==='ko';
+  const koBtn=document.getElementById(_distribBtnId('ko',group,aid));
+  const okBtn=document.getElementById(_distribBtnId('ok',group,aid));
+  if(koBtn){koBtn.style.background=isKo?'#e74c3c':'#fde2e2';koBtn.style.color=isKo?'#fff':'#c0392b';}
+  if(okBtn){okBtn.style.background=isOk?'#27ae60':'#d9f3e3';okBtn.style.color=isOk?'#fff':'#1e8449';}
+}
+function setDistribCheck(group,aid,value){
+  const d=_distDataFor(group,aid);
+  d.check=(d.check===value)?null:value;
+  _updateDistribBtns(group,aid);
+  sbSchedule();
+}
+function addExtraDistrib(group){
+  const id='ex'+(_dotaExtraNextId++);
+  _distExtraList(group).push({id,nom:'',check:null,qty:0,note:''});
+  _dotaScrollSafe(()=>renderDotaDistribution(document.getElementById('dotaContent'),group));
+  sbSchedule();
+  setTimeout(()=>{
+    const el=document.querySelector('.doDistExtraName[data-aid="'+id+'"]');
+    if(el){el.focus();el.scrollIntoView({block:'center',behavior:'smooth'});}
+  },80);
+}
+function deleteExtraDistrib(group,id){
+  if(!confirm('Supprimer cette ligne ?'))return;
+  DOTA_EXTRA_DISTRIB[group]=_distExtraList(group).filter(e=>String(e.id)!==String(id));
+  _dotaScrollSafe(()=>renderDotaDistribution(document.getElementById('dotaContent'),group));
+  sbSchedule();
+}
+function _distribRowHTML(group,id,nom,d,isExtra){
+  const isOk=d.check==='ok', isKo=d.check==='ko';
+  const nameCell=isExtra
+    ?'<input type="text" class="nce doDistExtraName" data-group="'+group+'" data-aid="'+id+'" value="'+(nom||'').replace(/"/g,'&quot;')+'" placeholder="Nom de l\'article" style="width:100%;font-weight:700">'
+    :'<span style="font-weight:700">'+nom+'</span>';
+  return '<tr>'
+    +'<td style="white-space:nowrap;padding:6px 10px">'+(isExtra?'':'<span style="margin-right:6px">📦</span>')+nameCell+'</td>'
+    +'<td style="text-align:center;padding:6px">'
+    +'<button id="'+_distribBtnId('ko',group,id)+'" onclick="setDistribCheck(\''+group+'\',\''+id+'\',\'ko\')" style="background:'+(isKo?'#e74c3c':'#fde2e2')+';color:'+(isKo?'#fff':'#c0392b')+';border:none;border-radius:6px;width:36px;height:32px;font-weight:900;cursor:pointer;margin-right:6px;font-size:1rem">✕</button>'
+    +'<button id="'+_distribBtnId('ok',group,id)+'" onclick="setDistribCheck(\''+group+'\',\''+id+'\',\'ok\')" style="background:'+(isOk?'#27ae60':'#d9f3e3')+';color:'+(isOk?'#fff':'#1e8449')+';border:none;border-radius:6px;width:36px;height:32px;font-weight:900;cursor:pointer;font-size:1rem">✓</button>'
+    +'</td>'
+    +'<td style="text-align:center;padding:6px"><input type="number" min="0" class="nce doDistQty" data-group="'+group+'" data-aid="'+id+'" value="'+(d.qty||0)+'" style="width:'+(isExtra?'60px':'74px')+';text-align:center"></td>'
+    +'<td style="padding:6px"><div style="display:flex;gap:6px;align-items:center"><input type="text" class="nce doDistNote" data-group="'+group+'" data-aid="'+id+'" value="'+(d.note||'').replace(/"/g,'&quot;')+'" placeholder="Note…" style="flex:1">'
+    +(isExtra?'<button onclick="deleteExtraDistrib(\''+group+'\',\''+id+'\')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.9rem;flex-shrink:0">🗑</button>':'')
+    +'</div></td>'
+    +'</tr>';
+}
+function renderDotaDistribution(cont,group){
+  if(!DOTA_DISTRIB[group])DOTA_DISTRIB[group]={};
+  const {order,groups}=_articlesByCat();
+  let rows='';
+  order.forEach(function(catKey){
+    const arts=groups[catKey];
+    if(!arts||!arts.length)return;
+    rows+='<tr style="background:#f3f3f3"><td colspan="4" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">'
+      +CAT[catKey]+' <span style="font-size:.6rem;opacity:.6;font-weight:700">('+arts.length+')</span></td></tr>';
+    arts.forEach(function(a){
+      rows+=_distribRowHTML(group,a.id,a.nom,_distDataFor(group,a.id),false);
+    });
+  });
+  const extras=_distExtraList(group);
+  if(extras.length){
+    rows+='<tr style="background:#fff7e6"><td colspan="4" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">✏️ Articles ajoutés manuellement <span style="font-size:.6rem;opacity:.6;font-weight:700">('+extras.length+')</span></td></tr>';
+    extras.forEach(function(e){
+      rows+=_distribRowHTML(group,e.id,e.nom,e,true);
+    });
+  }
+  cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">📋 Distribution — '+_groupLabelDisplay(group)+'</span>'
+    +'<div style="display:flex;gap:6px"><button class="btn btn-or btn-sm" onclick="addExtraDistrib(\''+group+'\')">➕ Ligne</button><button class="btn btn-r btn-sm" onclick="expDotaDistribXLSX()">⬇ Excel</button></div></div>'
+    +'<div class="nts"><table class="ntbl"><thead><tr><th style="min-width:230px">Article</th><th style="min-width:100px">'+_groupLabelDisplay(group)+'</th><th style="min-width:90px">Nombre</th><th style="min-width:160px">Note</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
+
+// ── Export Dotations ──
+function _dotaReceptionR(){
+  const h=['Catégorie','Article','Commandé','Reçu','Statut'];
+  const {order,groups}=_articlesByCat();
+  const rows=[h];
+  order.forEach(function(catKey){
+    (groups[catKey]||[]).forEach(function(a){
+      const d=_recDataFor(a.id);
+      const s=_recStatus(a.id);
+      rows.push([CAT[catKey],a.nom,d.commande||0,d.recu||0,s.label.replace(/[❌✅🟧]/g,'').trim()]);
+    });
+  });
+  DOTA_EXTRA_RECEPTION.forEach(function(e){
+    const s=_recStatus(e.id);
+    rows.push(['Ajouté manuellement',e.nom,e.commande||0,e.recu||0,s.label.replace(/[❌✅🟧]/g,'').trim()]);
+  });
+  return rows;
+}
+function _dotaDistribR(group){
+  const h=['Catégorie','Article',_groupLabelDisplay(group),'Nombre','Note'];
+  const {order,groups}=_articlesByCat();
+  const rows=[h];
+  order.forEach(function(catKey){
+    (groups[catKey]||[]).forEach(function(a){
+      const d=_distDataFor(group,a.id);
+      rows.push([CAT[catKey],a.nom,d.check==='ok'?'✓':d.check==='ko'?'✕':'',d.qty||0,d.note||'']);
+    });
+  });
+  _distExtraList(group).forEach(function(e){
+    rows.push(['Ajouté manuellement',e.nom,e.check==='ok'?'✓':e.check==='ko'?'✕':'',e.qty||0,e.note||'']);
+  });
+  return rows;
+}
+function expDotaReceptionXLSX(){_dlXLSX([{n:'Réception',r:_dotaReceptionR()}],'dotations_reception.xlsx');}
+function expDotaDistribXLSX(){_dlXLSX([{n:_groupLabelDisplay(dotaGroup).replace(/[^\w ]/g,'').trim().slice(0,28),r:_dotaDistribR(dotaGroup)}],'dotations_distribution.xlsx');}
 
 // ════ NUMÉROTATION ════
 function showNumTab(tab,el){currentNumTab=tab;document.querySelectorAll('.nsb').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderNumerotation();}
@@ -1662,9 +2001,7 @@ function saveJoueur(){
   }
   closeM('mJoueur');
   renderNumerotation();
-  _lsSave();
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_save,300);
+  sbSchedule();
 }
 
 function deleteJoueur(){
@@ -1672,9 +2009,7 @@ function deleteJoueur(){
   JOUEURS=JOUEURS.filter(x=>x.id!==editingJoueurId);
   closeM('mJoueur');
   renderNumerotation();
-  _lsSave();
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_save,300);
+  sbSchedule();
 }
 
 // ─── Staff modal helpers ───
@@ -1731,9 +2066,7 @@ function saveStaff(){
   }
   closeM('mStaff');
   renderNumerotation();
-  _lsSave();
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_save,300);
+  sbSchedule();
 }
 
 function deleteStaff(){
@@ -1743,9 +2076,7 @@ function deleteStaff(){
   STAFF_ESPOIR=STAFF_ESPOIR.filter(x=>x.id!==editingStaffId);
   closeM('mStaff');
   renderNumerotation();
-  _lsSave();
-  clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(_save,300);
+  sbSchedule();
 }
 
 // ════ FLOCAGE ════
@@ -2089,15 +2420,7 @@ function showStartupAlert(){
   openM('mStartup');
 }
 
-// ═══════════════════════════════════════════════════
-//  SAUVEGARDE — IndexedDB (persistant sur Safari iOS)
-// ═══════════════════════════════════════════════════
-const DB_NAME    = 'SDR_DB';
-const DB_STORE   = 'state';
-const DB_KEY     = 'sdr_state';
-let   _saveTimer = null;
-
-// ── Toast ──
+// ── Toast (utilisée par plusieurs écrans) ──
 function _showToast(msg, dur){
   dur = dur||3000;
   var t = document.getElementById('sbToast');
@@ -2112,39 +2435,6 @@ function _showToast(msg, dur){
   clearTimeout(t._t);
   t._t = setTimeout(function(){ t.style.opacity='0'; }, dur);
 }
-
-function _addSyncDot(){
-  var hi = document.querySelector('.hi');
-  if(!hi||document.getElementById('syncDot')) return;
-  var d = document.createElement('div');
-  d.id = 'syncDot';
-  d.style.cssText = 'width:11px;height:11px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px';
-  hi.appendChild(d);
-}
-function _dot(s){ var d=document.getElementById('syncDot'); if(d) d.style.background={ok:'#27ae60',saving:'#e67e22',err:'#c0392b'}[s]||'#aaa'; }
-function _btnIcon(ic){ var b=document.getElementById('saveBtnIcon'); if(b) b.textContent=ic; }
-
-// ── État ──
-function _getState(){
-  return {
-    DATA:DATA, FLOCAGE:FLOCAGE, JOUEURS:JOUEURS,
-    STAFF_PRO1:STAFF_PRO1, STAFF_PRO2:STAFF_PRO2, STAFF_ESPOIR:STAFF_ESPOIR,
-    CAT:CAT, customColsJ:customColsJ, customColsS:customColsS,
-    MATCHS:MATCHS, TODOS:TODOS, HISTORIQUE:HISTORIQUE,
-    ts: Date.now()
-  };
-}
-function _applyState(s){
-  if(!s||!s.DATA||!s.JOUEURS) return false;
-  DATA=s.DATA; FLOCAGE=s.FLOCAGE||FLOCAGE; JOUEURS=s.JOUEURS;
-  STAFF_PRO1=s.STAFF_PRO1||STAFF_PRO1; STAFF_PRO2=s.STAFF_PRO2||STAFF_PRO2;
-  STAFF_ESPOIR=s.STAFF_ESPOIR||[]; CAT=s.CAT||CAT;
-  if(s.customColsJ&&s.customColsJ.length) customColsJ=s.customColsJ;
-  if(s.customColsS&&s.customColsS.length) customColsS=s.customColsS;
-  MATCHS=s.MATCHS||MATCHS; TODOS=s.TODOS||[]; HISTORIQUE=s.HISTORIQUE||[];
-  return true;
-}
-
 
 // ══════════════════════════════════════════════════════
 //  SAUVEGARDE — JSONBin cloud + localStorage fallback
@@ -2192,6 +2482,10 @@ function _getState() {
     STAFF_PRO1: STAFF_PRO1, STAFF_PRO2: STAFF_PRO2, STAFF_ESPOIR: STAFF_ESPOIR,
     CAT: CAT, customColsJ: customColsJ, customColsS: customColsS,
     MATCHS: MATCHS, TODOS: TODOS, HISTORIQUE: HISTORIQUE,
+    DOTA_RECEPTION: DOTA_RECEPTION, DOTA_DISTRIB: DOTA_DISTRIB,
+    DOTA_EXTRA_RECEPTION: DOTA_EXTRA_RECEPTION, DOTA_EXTRA_DISTRIB: DOTA_EXTRA_DISTRIB,
+    _dotaExtraNextId: _dotaExtraNextId,
+    TAB_ORDER: TAB_ORDER,
     ts: Date.now()
   };
 }
@@ -2210,6 +2504,24 @@ function _setState(s) {
   MATCHS       = s.MATCHS       || MATCHS;
   TODOS        = s.TODOS        || [];
   HISTORIQUE   = s.HISTORIQUE   || [];
+  DOTA_RECEPTION = s.DOTA_RECEPTION || {};
+  DOTA_DISTRIB   = s.DOTA_DISTRIB   || {};
+  ['PRO 1','PRO 2','ESPOIR','STAFF_PRO1','STAFF_PRO2','STAFF_ESPOIR'].forEach(function(g){
+    if (!DOTA_DISTRIB[g]) DOTA_DISTRIB[g] = {};
+  });
+  DOTA_EXTRA_RECEPTION = Array.isArray(s.DOTA_EXTRA_RECEPTION) ? s.DOTA_EXTRA_RECEPTION : [];
+  DOTA_EXTRA_DISTRIB   = s.DOTA_EXTRA_DISTRIB || {};
+  ['PRO 1','PRO 2','ESPOIR','STAFF_PRO1','STAFF_PRO2','STAFF_ESPOIR'].forEach(function(g){
+    if (!Array.isArray(DOTA_EXTRA_DISTRIB[g])) DOTA_EXTRA_DISTRIB[g] = [];
+  });
+  _dotaExtraNextId = s._dotaExtraNextId || 1;
+  if (s.TAB_ORDER && Array.isArray(s.TAB_ORDER) && s.TAB_ORDER.length) {
+    var validOrder = s.TAB_ORDER.filter(function(p){ return DEFAULT_TAB_ORDER.indexOf(p) !== -1; });
+    DEFAULT_TAB_ORDER.forEach(function(p){ if (validOrder.indexOf(p) === -1) validOrder.push(p); });
+    TAB_ORDER = validOrder;
+  } else {
+    TAB_ORDER = [...DEFAULT_TAB_ORDER];
+  }
   return true;
 }
 
@@ -2259,9 +2571,11 @@ function _cloudLoad() {
 
 // ── Rendu complet ──
 function _renderAll() {
+  try { _applyTabOrder(); }    catch(e) {}
   try { renderFilterBtns(); }  catch(e) {}
   try { renderCards(); }       catch(e) {}
   try { renderNumerotation(); }catch(e) {}
+  try { renderDotations(); }   catch(e) {}
   try { renderFlocage(); }     catch(e) {}
   try { renderAlertes(); }     catch(e) {}
   try { renderTableau(); }     catch(e) {}
@@ -2351,6 +2665,53 @@ function _handleCell(t) {
     var lst = ti === 'PRO 1' ? STAFF_PRO1 : ti === 'PRO 2' ? STAFF_PRO2 : STAFF_ESPOIR;
     for (var m = 0; m < lst.length; m++) {
       if (String(lst[m].id) === String(sid)) { lst[m].tailles[col2] = t.value; break; }
+    }
+    sbSchedule();
+    return true;
+  }
+  if (t.classList.contains('doRecCom')) {
+    var aid1 = t.dataset.aid;
+    var rec1 = _recDataFor(aid1);
+    rec1.commande = parseInt(t.value) || 0;
+    updateRecStatus(aid1);
+    sbSchedule();
+    return true;
+  }
+  if (t.classList.contains('doRecRecu')) {
+    var aid2 = t.dataset.aid;
+    var rec2 = _recDataFor(aid2);
+    rec2.recu = parseInt(t.value) || 0;
+    updateRecStatus(aid2);
+    sbSchedule();
+    return true;
+  }
+  if (t.classList.contains('doRecExtraName')) {
+    var aidN = t.dataset.aid;
+    for (var n1 = 0; n1 < DOTA_EXTRA_RECEPTION.length; n1++) {
+      if (String(DOTA_EXTRA_RECEPTION[n1].id) === String(aidN)) { DOTA_EXTRA_RECEPTION[n1].nom = t.value; break; }
+    }
+    sbSchedule();
+    return true;
+  }
+  if (t.classList.contains('doDistQty')) {
+    var grpQ = t.dataset.group, aidQ = t.dataset.aid;
+    var dq = _distDataFor(grpQ, aidQ);
+    dq.qty = parseInt(t.value) || 0;
+    sbSchedule();
+    return true;
+  }
+  if (t.classList.contains('doDistNote')) {
+    var grp = t.dataset.group, aid3 = t.dataset.aid;
+    var dn = _distDataFor(grp, aid3);
+    dn.note = t.value;
+    sbSchedule();
+    return true;
+  }
+  if (t.classList.contains('doDistExtraName')) {
+    var grpN = t.dataset.group, aidN2 = t.dataset.aid;
+    var listN = _distExtraList(grpN);
+    for (var n2 = 0; n2 < listN.length; n2++) {
+      if (String(listN[n2].id) === String(aidN2)) { listN[n2].nom = t.value; break; }
     }
     sbSchedule();
     return true;
