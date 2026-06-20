@@ -1484,34 +1484,45 @@ function renderDotations(){
 }
 
 // ── Réception Livraison ──
+const DOTA_SIZES=['S','M','L','XL','XXL'];
+function _emptyRecSizes(){const o={};DOTA_SIZES.forEach(s=>o[s]=0);return o;}
+function _migrateRecEntry(d){
+  if(!d||typeof d!=='object')d={};
+  if(!d.commande||typeof d.commande!=='object')d.commande=_emptyRecSizes();
+  if(!d.recu||typeof d.recu!=='object')d.recu=_emptyRecSizes();
+  DOTA_SIZES.forEach(function(s){
+    if(d.commande[s]===undefined)d.commande[s]=0;
+    if(d.recu[s]===undefined)d.recu[s]=0;
+  });
+  return d;
+}
 // Trouve (ou crée) l'objet de données pour un article — qu'il vienne de l'inventaire ou soit une ligne ajoutée manuellement
 function _recDataFor(aid){
   for(let i=0;i<DOTA_EXTRA_RECEPTION.length;i++){
-    if(String(DOTA_EXTRA_RECEPTION[i].id)===String(aid)) return DOTA_EXTRA_RECEPTION[i];
+    if(String(DOTA_EXTRA_RECEPTION[i].id)===String(aid)) return _migrateRecEntry(DOTA_EXTRA_RECEPTION[i]);
   }
-  if(!DOTA_RECEPTION[aid])DOTA_RECEPTION[aid]={commande:0,recu:0};
-  return DOTA_RECEPTION[aid];
+  if(!DOTA_RECEPTION[aid])DOTA_RECEPTION[aid]={commande:_emptyRecSizes(),recu:_emptyRecSizes()};
+  return _migrateRecEntry(DOTA_RECEPTION[aid]);
 }
-function _recStatus(aid){
+function _recSizeStatus(commande,recu){
+  commande=+commande||0;recu=+recu||0;
+  if(commande<=0) return {bg:'#f3f3f3',color:'#999'};
+  if(recu<=0) return {bg:'#f8d7da',color:'#721c24'};
+  if(recu>=commande) return {bg:'#d4edda',color:'#155724'};
+  return {bg:'#fde9d0',color:'#8a5a00'};
+}
+function updateRecStatus(aid,size){
   const d=_recDataFor(aid);
-  const commande=+d.commande||0, recu=+d.recu||0;
-  if(commande<=0) return {label:'—',bg:'#f3f3f3',color:'#999'};
-  if(recu<=0) return {label:'❌ Non reçu',bg:'#f8d7da',color:'#721c24'};
-  if(recu>=commande) return {label:'✅ Reçu',bg:'#d4edda',color:'#155724'};
-  return {label:'🟧 '+recu+' / '+commande,bg:'#fde9d0',color:'#8a5a00'};
-}
-function updateRecStatus(aid){
-  const cell=document.getElementById('recStatusCell_'+aid);
-  const label=document.getElementById('recStatusLabel_'+aid);
-  if(!cell||!label)return;
-  const s=_recStatus(aid);
+  const cell=document.getElementById('recStatusCell_'+aid+'_'+size);
+  if(!cell)return;
+  const s=_recSizeStatus(d.commande[size],d.recu[size]);
   cell.style.background=s.bg;
-  label.style.color=s.color;
-  label.textContent=s.label;
+  const inp=cell.querySelector('input');
+  if(inp)inp.style.color=s.color;
 }
 function addExtraReception(){
   const id='ex'+(_dotaExtraNextId++);
-  DOTA_EXTRA_RECEPTION.push({id,nom:'',commande:0,recu:0});
+  DOTA_EXTRA_RECEPTION.push({id,nom:'',commande:_emptyRecSizes(),recu:_emptyRecSizes()});
   _dotaScrollSafe(()=>renderDotaReception(document.getElementById('dotaContent')));
   sbSchedule();
   setTimeout(()=>{
@@ -1536,45 +1547,58 @@ function restoreReceptionHidden(){
   _dotaScrollSafe(()=>renderDotaReception(document.getElementById('dotaContent')));
   sbSchedule();
 }
+function _recSizeCellsHTML(aid,d,prefix){
+  // prefix: 'doRecCom' (commandé, non coloré) ou 'doRecRecu' (reçu, coloré)
+  return DOTA_SIZES.map(function(sz){
+    if(prefix==='doRecCom'){
+      return '<td style="padding:3px;text-align:center;border-left:1px solid #eee"><input type="number" min="0" class="nce '+prefix+'" data-aid="'+aid+'" data-size="'+sz+'" value="'+(d.commande[sz]||0)+'" style="width:48px;text-align:center"></td>';
+    }
+    const s=_recSizeStatus(d.commande[sz],d.recu[sz]);
+    return '<td id="recStatusCell_'+aid+'_'+sz+'" style="padding:3px;text-align:center;border-left:1px solid #eee;background:'+s.bg+'"><input type="number" min="0" class="nce '+prefix+'" data-aid="'+aid+'" data-size="'+sz+'" value="'+(d.recu[sz]||0)+'" style="width:48px;text-align:center;background:transparent;font-weight:800;color:'+s.color+'"></td>';
+  }).join('');
+}
 function renderDotaReception(cont){
   const {order,groups}=_articlesByCat();
+  const colCount=2+DOTA_SIZES.length*2;
   let rows='';
   order.forEach(function(catKey){
     const arts=(groups[catKey]||[]).filter(a=>DOTA_RECEPTION_HIDDEN.indexOf(String(a.id))===-1);
     if(!arts.length)return;
-    rows+='<tr style="background:#f3f3f3"><td colspan="3" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">'
+    rows+='<tr style="background:#f3f3f3"><td colspan="'+colCount+'" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">'
       +CAT[catKey]+' <span style="font-size:.6rem;opacity:.6;font-weight:700">('+arts.length+')</span></td></tr>';
     arts.forEach(function(a){
       const d=_recDataFor(a.id);
-      const s=_recStatus(a.id);
       rows+='<tr>'
         +'<td style="white-space:nowrap;padding:6px 10px"><span style="margin-right:6px">'+(a.icon||'📦')+'</span><span style="font-weight:700">'+a.nom+'</span></td>'
-        +'<td style="text-align:center;padding:6px"><input type="number" min="0" class="nce doRecCom" data-aid="'+a.id+'" value="'+(d.commande||0)+'" style="width:78px;text-align:center"></td>'
-        +'<td id="recStatusCell_'+a.id+'" style="text-align:center;padding:6px;background:'+s.bg+'">'
-          +'<input type="number" min="0" class="nce doRecRecu" data-aid="'+a.id+'" value="'+(d.recu||0)+'" style="width:60px;text-align:center;background:transparent;font-weight:800">'
-          +'<button onclick="hideReceptionArticle('+JSON.stringify(String(a.id))+')" title="Retirer cette ligne du tableau" style="margin-left:6px;background:none;border:none;color:#c0392b;cursor:pointer;font-size:.9rem;vertical-align:middle">🗑</button>'
-          +'<div id="recStatusLabel_'+a.id+'" style="font-size:.62rem;font-weight:800;color:'+s.color+';margin-top:3px">'+s.label+'</div></td>'
+        +_recSizeCellsHTML(a.id,d,'doRecCom')
+        +_recSizeCellsHTML(a.id,d,'doRecRecu')
+        +'<td style="text-align:center;padding:6px"><button onclick="hideReceptionArticle('+JSON.stringify(String(a.id))+')" title="Retirer cette ligne du tableau" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.9rem">🗑</button></td>'
         +'</tr>';
     });
   });
   if(DOTA_EXTRA_RECEPTION.length){
-    rows+='<tr style="background:#fff7e6"><td colspan="3" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">✏️ Articles ajoutés manuellement <span style="font-size:.6rem;opacity:.6;font-weight:700">('+DOTA_EXTRA_RECEPTION.length+')</span></td></tr>';
+    rows+='<tr style="background:#fff7e6"><td colspan="'+colCount+'" style="padding:6px 12px;font-family:\'Bebas Neue\',sans-serif;font-size:.85rem;color:var(--rd);letter-spacing:1px">✏️ Articles ajoutés manuellement <span style="font-size:.6rem;opacity:.6;font-weight:700">('+DOTA_EXTRA_RECEPTION.length+')</span></td></tr>';
     DOTA_EXTRA_RECEPTION.forEach(function(e){
-      const s=_recStatus(e.id);
+      const d=_recDataFor(e.id);
       rows+='<tr>'
         +'<td style="padding:6px 10px"><input type="text" class="nce doRecExtraName" data-aid="'+e.id+'" value="'+(e.nom||'').replace(/"/g,'&quot;')+'" placeholder="Nom de l\'article" style="width:100%;font-weight:700"></td>'
-        +'<td style="text-align:center;padding:6px"><input type="number" min="0" class="nce doRecCom" data-aid="'+e.id+'" value="'+(e.commande||0)+'" style="width:78px;text-align:center"></td>'
-        +'<td id="recStatusCell_'+e.id+'" style="text-align:center;padding:6px;background:'+s.bg+'">'
-          +'<input type="number" min="0" class="nce doRecRecu" data-aid="'+e.id+'" value="'+(e.recu||0)+'" style="width:60px;text-align:center;background:transparent;font-weight:800">'
-          +'<button onclick="deleteExtraReception(\''+e.id+'\')" title="Supprimer cette ligne" style="margin-left:6px;background:none;border:none;color:#c0392b;cursor:pointer;font-size:.9rem;vertical-align:middle">🗑</button>'
-          +'<div id="recStatusLabel_'+e.id+'" style="font-size:.62rem;font-weight:800;color:'+s.color+';margin-top:3px">'+s.label+'</div></td>'
+        +_recSizeCellsHTML(e.id,d,'doRecCom')
+        +_recSizeCellsHTML(e.id,d,'doRecRecu')
+        +'<td style="text-align:center;padding:6px"><button onclick="deleteExtraReception(\''+e.id+'\')" title="Supprimer cette ligne" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.9rem">🗑</button></td>'
         +'</tr>';
     });
   }
   const hiddenInfo=DOTA_RECEPTION_HIDDEN.length?(' · <a href="#" onclick="restoreReceptionHidden();return false;" style="color:#fff;text-decoration:underline;font-weight:700">🙈 '+DOTA_RECEPTION_HIDDEN.length+' masqué(s) — réafficher</a>'):'';
+  const sizeHdrCom=DOTA_SIZES.map(s=>'<th style="font-size:.55rem;border-left:1px solid #eee;padding:3px 2px;min-width:50px">'+s+'</th>').join('');
+  const sizeHdrRecu=DOTA_SIZES.map(s=>'<th style="font-size:.55rem;border-left:1px solid #eee;padding:3px 2px;min-width:50px">'+s+'</th>').join('');
   cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">📦 Réception Livraison'+hiddenInfo+'</span>'
     +'<div style="display:flex;gap:6px"><button class="btn btn-or btn-sm" onclick="addExtraReception()">➕ Ligne</button><button class="btn btn-r btn-sm" onclick="expDotaReceptionXLSX()">⬇ Excel</button></div></div>'
-    +'<div class="nts"><table class="ntbl"><thead><tr><th style="min-width:230px">Article</th><th style="min-width:110px">Commandé</th><th style="min-width:150px">Reçu</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    +'<div class="nts"><table class="ntbl"><thead><tr>'
+      +'<th rowspan="2" style="min-width:220px;vertical-align:middle">Article</th>'
+      +'<th colspan="'+DOTA_SIZES.length+'" style="text-align:center;background:#ffeaea">Commandé</th>'
+      +'<th colspan="'+DOTA_SIZES.length+'" style="text-align:center;background:#e8f5e9">Reçu</th>'
+      +'<th rowspan="2" style="min-width:40px"></th>'
+      +'</tr><tr>'+sizeHdrCom+sizeHdrRecu+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 
 // ── Distribution des équipements ──
@@ -1688,19 +1712,20 @@ function renderDotaDistribution(cont,group){
 
 // ── Export Dotations ──
 function _dotaReceptionR(){
-  const h=['Catégorie','Article','Commandé','Reçu','Statut'];
+  const h=['Catégorie','Article',
+    ...DOTA_SIZES.map(s=>'Commandé '+s),
+    ...DOTA_SIZES.map(s=>'Reçu '+s)];
   const {order,groups}=_articlesByCat();
   const rows=[h];
   order.forEach(function(catKey){
     (groups[catKey]||[]).filter(a=>DOTA_RECEPTION_HIDDEN.indexOf(String(a.id))===-1).forEach(function(a){
       const d=_recDataFor(a.id);
-      const s=_recStatus(a.id);
-      rows.push([CAT[catKey],a.nom,d.commande||0,d.recu||0,s.label.replace(/[❌✅🟧]/g,'').trim()]);
+      rows.push([CAT[catKey],a.nom,...DOTA_SIZES.map(s=>d.commande[s]||0),...DOTA_SIZES.map(s=>d.recu[s]||0)]);
     });
   });
   DOTA_EXTRA_RECEPTION.forEach(function(e){
-    const s=_recStatus(e.id);
-    rows.push(['Ajouté manuellement',e.nom,e.commande||0,e.recu||0,s.label.replace(/[❌✅🟧]/g,'').trim()]);
+    const d=_recDataFor(e.id);
+    rows.push(['Ajouté manuellement',e.nom,...DOTA_SIZES.map(s=>d.commande[s]||0),...DOTA_SIZES.map(s=>d.recu[s]||0)]);
   });
   return rows;
 }
@@ -2678,18 +2703,18 @@ function _handleCell(t) {
     return true;
   }
   if (t.classList.contains('doRecCom')) {
-    var aid1 = t.dataset.aid;
+    var aid1 = t.dataset.aid, sz1 = t.dataset.size;
     var rec1 = _recDataFor(aid1);
-    rec1.commande = parseInt(t.value) || 0;
-    updateRecStatus(aid1);
+    rec1.commande[sz1] = parseInt(t.value) || 0;
+    updateRecStatus(aid1, sz1);
     sbSchedule();
     return true;
   }
   if (t.classList.contains('doRecRecu')) {
-    var aid2 = t.dataset.aid;
+    var aid2 = t.dataset.aid, sz2 = t.dataset.size;
     var rec2 = _recDataFor(aid2);
-    rec2.recu = parseInt(t.value) || 0;
-    updateRecStatus(aid2);
+    rec2.recu[sz2] = parseInt(t.value) || 0;
+    updateRecStatus(aid2, sz2);
     sbSchedule();
     return true;
   }
