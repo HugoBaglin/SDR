@@ -2471,6 +2471,9 @@ function _showToast(msg, dur){
 
 var _BIN  = '6a1edd52f5f4af5e29ad346f';
 var _BKEY = '$2a$10$TrOcg3kWnwSBrkVDJKFuE.mZHtDNhRbHh.rI/x5ZTxY6XJ67tpGd6';
+// Horodatage de génération de ce fichier — toute donnée locale/cloud plus ANCIENNE que ceci est ignorée
+// au profit des valeurs par défaut embarquées, qui sont alors plus à jour.
+var _DEFAULTS_TS = 1782039600000;
 var _LS   = 'sdr_reims';
 var _t    = null;  // timer
 var _busy = false; // sauvegarde en cours
@@ -2492,24 +2495,55 @@ function _toast(msg, dur) {
 }
 
 // ── Indicateur ──
+var _lastCloudError = '';
 function _addDot() {
   var hi = document.querySelector('.hi');
   if (!hi || document.getElementById('_d')) return;
   var d = document.createElement('div');
   d.id = '_d';
-  d.style.cssText = 'width:10px;height:10px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .3s';
+  d.title = 'Statut sauvegarde cloud — toucher pour le détail';
+  d.style.cssText = 'width:10px;height:10px;border-radius:50%;background:#27ae60;flex-shrink:0;margin-left:4px;transition:background .3s;cursor:pointer';
+  d.onclick = function(){
+    if(_lastCloudError) _toast('☁️ Sync cloud : ' + _lastCloudError, 5000);
+    else _toast('☁️ Sync cloud OK', 2500);
+  };
   hi.appendChild(d);
 }
 function _dotC(c) { var d = document.getElementById('_d'); if (d) d.style.background = { ok:'#27ae60', saving:'#e67e22', err:'#e74c3c' }[c] || '#aaa'; }
 function _setBtn(ic) { var b = document.getElementById('saveBtnIcon'); if (b) b.textContent = ic; }
 
 // ── État complet ──
+// Compresse les entrées joueurs entièrement vides d'un match (économise énormément d'espace de sauvegarde)
+function _compressMatch(m){
+  var compact = {};
+  var src = m.joueurs || {};
+  Object.keys(src).forEach(function(pid){
+    var e = src[pid];
+    if(e && (e.m1||e.m2||e.s1||e.s2||e.comment)) compact[pid] = e;
+  });
+  var out = {};
+  for(var k in m){ out[k] = m[k]; }
+  out.joueurs = compact;
+  return out;
+}
+// Réintègre une entrée vide par défaut pour chaque joueur actuel (le rendu attend une structure complète)
+function _expandMatch(m){
+  var full = {};
+  JOUEURS.forEach(function(j){
+    full[j.id] = (m.joueurs && m.joueurs[j.id]) ? m.joueurs[j.id] : {m1:'',m2:'',s1:'',s2:'',comment:''};
+  });
+  var out = {};
+  for(var k in m){ out[k] = m[k]; }
+  out.joueurs = full;
+  return out;
+}
+
 function _getState() {
   return {
     DATA: DATA, FLOCAGE: FLOCAGE, JOUEURS: JOUEURS,
     STAFF_PRO1: STAFF_PRO1, STAFF_PRO2: STAFF_PRO2, STAFF_ESPOIR: STAFF_ESPOIR,
     CAT: CAT, customColsJ: customColsJ, customColsS: customColsS,
-    MATCHS: MATCHS, TODOS: TODOS, HISTORIQUE: HISTORIQUE,
+    MATCHS: MATCHS.map(_compressMatch), TODOS: TODOS, HISTORIQUE: HISTORIQUE,
     DOTA_RECEPTION: DOTA_RECEPTION, DOTA_DISTRIB: DOTA_DISTRIB,
     DOTA_EXTRA_RECEPTION: DOTA_EXTRA_RECEPTION, DOTA_EXTRA_DISTRIB: DOTA_EXTRA_DISTRIB,
     DOTA_RECEPTION_HIDDEN: DOTA_RECEPTION_HIDDEN, DOTA_DISTRIB_HIDDEN: DOTA_DISTRIB_HIDDEN,
@@ -2531,6 +2565,7 @@ function _setState(s) {
   if (s.customColsJ && s.customColsJ.length) customColsJ = s.customColsJ;
   if (s.customColsS && s.customColsS.length) customColsS = s.customColsS;
   MATCHS       = s.MATCHS       || MATCHS;
+  MATCHS       = MATCHS.map(_expandMatch);
   TODOS        = s.TODOS        || [];
   HISTORIQUE   = s.HISTORIQUE   || [];
   DOTA_RECEPTION = s.DOTA_RECEPTION || {};
@@ -2611,8 +2646,17 @@ function _cloudSave() {
     body: JSON.stringify(_getState())
   }).then(function(r) {
     _busy = false;
+    if(!r.ok){
+      _lastCloudError = 'HTTP ' + r.status + ' ' + r.statusText;
+      console.warn('Sauvegarde cloud refusée — code HTTP', r.status, r.statusText);
+      r.text().then(function(t){ console.warn('Détail JSONBin:', t); }).catch(function(){});
+    } else {
+      _lastCloudError = '';
+    }
     _dotC(r.ok ? 'ok' : 'err');
-  }).catch(function() {
+  }).catch(function(err) {
+    _lastCloudError = (err && err.message) || 'Erreur réseau';
+    console.warn('Sauvegarde cloud — erreur réseau:', err && err.message);
     _busy = false;
     _dotC('err');
   });
@@ -2923,49 +2967,45 @@ try { renderCards(); } catch(e) {}
 try { showStartupAlert(); } catch(e) {}
 
 (function() {
-  // 1. Chercher d'abord dans localStorage (le plus rapide)
   var ls = _lsLoad();
-  if (ls) {
+  var lsIsNewer = ls && ls.ts && ls.ts > _DEFAULTS_TS;
+
+  if (lsIsNewer) {
+    // Les données locales sont postérieures à la génération de ce fichier → ce sont les plus à jour
     _setState(ls);
     _renderAll();
     _toast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
     _dotC('ok');
-    // Sync cloud en arrière-plan sans bloquer
     _cloudLoad().then(function(cloud) {
       if (cloud && cloud.ts && ls.ts && cloud.ts > ls.ts) {
-        // Cloud plus récent → mettre à jour
         _setState(cloud);
         _lsSave();
         _renderAll();
         _toast('✅ Sync cloud — ' + JOUEURS.length + ' joueurs');
       } else if (cloud) {
-        // Local plus récent → pousser vers cloud
         _cloudSave();
       }
     });
     return;
   }
 
-  // 2. Pas de localStorage → charger depuis le cloud
-  _toast('⏳ Chargement...');
+  // Les valeurs par défaut embarquées dans ce fichier sont les plus récentes (ou aucune donnée locale valide)
+  // → on les utilise, et on resynchronise localStorage/cloud avec elles.
+  _renderAll();
+  _lsSave();
+  _toast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
+  _dotC('ok');
   _cloudLoad().then(function(cloud) {
-    if (cloud) {
+    if (cloud && cloud.ts && cloud.ts > _DEFAULTS_TS) {
+      // Le cloud est malgré tout plus récent que ce fichier (édité ailleurs entre-temps)
       _setState(cloud);
       _lsSave();
       _renderAll();
-      _toast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
-      _dotC('ok');
+      _toast('✅ Sync cloud — ' + JOUEURS.length + ' joueurs');
     } else {
-      // 3. Rien nulle part → données par défaut + première sync
-      _renderAll();
-      _lsSave();
       _cloudSave();
-      _toast('✅ Prêt');
     }
-  }).catch(function() {
-    _renderAll();
-    _toast('✅ Prêt (mode hors-ligne)');
-  });
+  }).catch(function(){ _cloudSave(); });
 })();
 </script>
 </body>
