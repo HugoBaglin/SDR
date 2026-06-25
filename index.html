@@ -914,8 +914,10 @@ const _SPORT_ICONS = {
 function _iconHTML(icon, size) {
   size = size || '1.6rem';
   if(icon && icon.startsWith('si:') && _SPORT_ICONS[icon]) {
-    var s = _SPORT_ICONS[icon].svg;
-    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:'+size+';height:'+size+'" title="'+_SPORT_ICONS[icon].label+'">'+s+'</span>';
+    var info = _SPORT_ICONS[icon];
+    // Forcer les dimensions sur l'élément SVG lui-même pour qu'il ne s'effondre pas
+    var svg = info.svg.replace('<svg ', '<svg width="'+size+'" height="'+size+'" style="display:block" ');
+    return '<span style="display:inline-flex;align-items:center;justify-content:center;width:'+size+';height:'+size+'" title="'+info.label+'">'+svg+'</span>';
   }
   return '<span style="font-size:'+size+'">'+(icon||'📦')+'</span>';
 }
@@ -1345,7 +1347,10 @@ function buildCard(a){
   const ts=tailles(a.type);
   const vuBadge='<span class="sbg" style="background:#d4edda;color:#155724">✅ Vu</span>';const stLbl=s==='rupture'?(a.vu?vuBadge:'<span class="sbg rupt">🚫 Rupture</span>'):s==='critique'?(a.vu?vuBadge:'<span class="sbg crit">⚠️ Critique</span>'):'<span class="sbg ok">✅ OK</span>';
   const cells=ts.map(t=>{const q=a.stock[t]??0;const cs=cellSt(q,a.seuil);return '<div class="tc '+cs+'" onclick="inlineEdit(this,'+a.id+',\''+t+'\')"><span class="tn">'+t+'</span><span class="tq">'+q+'</span></div>';}).join('');
-  const thumb=a.photo?'<div class="cth" onclick="openEdit('+a.id+')"><img src="'+a.photo+'" alt=""><div class="ov">📷</div></div>':'<div class="cth" onclick="openEdit('+a.id+')">'+_iconHTML(a.icon||'📦','2rem')+'<div class="ov">📷</div></div>';
+  const iconCth=(a.icon&&a.icon.startsWith('si:'))
+    ?'<div style="background:rgba(255,255,255,.92);border-radius:10px;padding:5px;display:flex;align-items:center;justify-content:center">'+_iconHTML(a.icon,'2.4rem')+'</div>'
+    :_iconHTML(a.icon||'📦','2rem');
+  const thumb=a.photo?'<div class="cth" onclick="openEdit('+a.id+')"><img src="'+a.photo+'" alt=""><div class="ov">📷</div></div>':'<div class="cth" onclick="openEdit('+a.id+')">'+iconCth+'<div class="ov">📷</div></div>';
   div.innerHTML='<div class="ct">'+thumb+'<div class="ci"><div class="cn">'+a.nom+'</div><div class="cc">'+(CAT[a.cat]||a.cat)+'</div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0"><button onclick="openEdit('+a.id+')" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:2px 7px;border-radius:5px;font-size:.58rem;font-weight:800;cursor:pointer">✏️</button>'+(isAlert?'<button onclick="event.stopPropagation();toggleVu('+a.id+')" style="background:'+(a.vu?'rgba(255,255,255,.35)':'#27ae60')+';border:none;color:#fff;padding:2px 7px;border-radius:5px;font-size:.58rem;font-weight:800;cursor:pointer">'+(a.vu?'↩ Non vu':'✅ Vu')+'</button>':'')+'</div></div>'
   +'<div class="cb"><div class="sb">'+stLbl+'<span class="sl" style="cursor:pointer;text-decoration:underline dotted" title="Cliquer pour modifier le seuil" onclick="editSeuil('+a.id+',this)">Seuil : '+a.seuil+' u.</span></div>'
   +'<div style="font-size:.6rem;font-weight:800;text-transform:uppercase;color:var(--r);letter-spacing:1px;margin-bottom:3px">Tailles</div>'
