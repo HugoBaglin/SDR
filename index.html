@@ -136,6 +136,8 @@ tfoot td{padding:7px 9px;font-family:'Bebas Neue',sans-serif;font-size:.88rem;ba
 .ntw{background:#fff;border-radius:13px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden;margin-bottom:20px}
 .nth{background:linear-gradient(130deg,var(--r),var(--rd));color:#fff;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .nts{overflow-x:auto;max-height:65vh;overflow-y:auto;padding-bottom:48px;scroll-padding-bottom:48px}
+.ntbl thead{position:sticky;top:0;z-index:4}
+.ntbl thead th{background:#fff5f5}
 .drag-handle{cursor:grab;text-align:center;color:#bbb;font-size:1rem;touch-action:none;width:26px;user-select:none;-webkit-user-select:none}
 .drag-handle:active{cursor:grabbing;color:var(--r)}
 tr.row-dragging{opacity:.55;background:#fff3e0!important;box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -2064,22 +2066,29 @@ function renderNumerotation(){
 }
 function renderNumJ(cont,list,title){
   const cols=customColsJ;
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="renameColJ('+i+',this.value)" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const W1=26,W2=46,W3=130; // largeurs colonnes sticky (drag, N°, Nom)
+  const S='position:sticky;z-index:2;';
+  const SH='position:sticky;z-index:3;'; // sticky dans le header (z-index plus haut)
+  const BG_H='background:#fff5f5;'; // fond header colonnes fixes
+  const BG_N='background:#fff;'; // fond cellules normales colonnes fixes
+  const hdr=cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="renameColJ('+i+',this.value)" onclick="this.select()"><button onclick="suppColJ('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
-  // Tri par numéro par défaut, conservé si déjà en ordre (l'utilisateur peut réordonner par drag)
   const sorted=[...list].sort((a,b)=>a.num-b.num);
   const rows=sorted.map(function(j){
     const bc=j.groupe==='PRO 1'?'nbp1':j.groupe==='PRO 2'?'nbp2':j.groupe==='ESPOIR'?'nbespoir':'nbpt';
     const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce njcell" data-jid="'+j.id+'" data-col="'+c+'" value="'+(j.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb njcell" data-jid="'+j.id+'" data-col="'+c+'_nb" value="'+(j.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
     return '<tr data-draggable="1" data-jid="'+j.id+'">'
-    +'<td class="drag-handle" title="Glisser pour réordonner">⠿</td>'
-    +'<td style="cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
-    +'<td style="white-space:nowrap;cursor:pointer" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
+    +'<td class="drag-handle" style="'+S+'left:0;'+BG_N+'" title="Glisser pour réordonner">⠿</td>'
+    +'<td style="'+S+'left:'+W1+'px;'+BG_N+'cursor:pointer;border-right:1px solid #e0e0e0" onclick="openJoueurEdit(\''+j.id+'\')">'+j.num+'</td>'
+    +'<td style="'+S+'left:'+(W1+W2)+'px;'+BG_N+'white-space:nowrap;cursor:pointer;border-right:2px solid #ddd" onclick="openJoueurEdit(\''+j.id+'\')"><span style="font-weight:800">'+j.nom+'</span> <span class="'+bc+'">'+gLabel(j.groupe)+'</span></td>'
     +cells+'</tr>';
   }).join('');
   const groupe=list.length>0?list[0].groupe:null;
   const sortBtn=groupe?'<button class="btn btn-sm" onclick="sortJoueursByNum(\''+groupe+'\')" title="Trier par numéro" style="background:#f0f0f0;color:#555;border:1px solid #ddd">🔢</button>':'';
-  cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">'+title+'<span style="margin-left:10px;background:#fff;color:var(--rd);border-radius:20px;padding:3px 12px;font-size:.85rem;font-weight:900;vertical-align:middle;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-block">'+list.length+'</span></span><div style="display:flex;gap:6px">'+sortBtn+'<button class="btn btn-or btn-sm" onclick="addJoueur()">➕</button><button class="btn btn-g btn-sm" onclick="ajoutColJ()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expNumXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr><th rowspan="2" style="vertical-align:middle;min-width:26px"></th><th rowspan="2" style="vertical-align:middle;min-width:36px">N°</th><th rowspan="2" style="vertical-align:middle;min-width:120px">Nom</th>'+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  const hdrRow1='<th rowspan="2" style="'+SH+'left:0;vertical-align:middle;min-width:'+W1+'px;'+BG_H+'border-right:1px solid #ddd"></th>'
+    +'<th rowspan="2" style="'+SH+'left:'+W1+'px;vertical-align:middle;min-width:'+W2+'px;'+BG_H+'border-right:1px solid #ddd">N°</th>'
+    +'<th rowspan="2" style="'+SH+'left:'+(W1+W2)+'px;vertical-align:middle;min-width:'+W3+'px;'+BG_H+'border-right:2px solid #bbb">Nom</th>';
+  cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">'+title+'<span style="margin-left:10px;background:#fff;color:var(--rd);border-radius:20px;padding:3px 12px;font-size:.85rem;font-weight:900;vertical-align:middle;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-block">'+list.length+'</span></span><div style="display:flex;gap:6px">'+sortBtn+'<button class="btn btn-or btn-sm" onclick="addJoueur()">➕</button><button class="btn btn-g btn-sm" onclick="ajoutColJ()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expNumXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr>'+hdrRow1+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 function renderNumTous(cont){
   const cols=customColsJ;
@@ -2102,18 +2111,26 @@ function expTousXLSX(){
 }
 function renderNumS(cont,list,title){
   const cols=customColsS;
-  const hdr=  cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="renameColS('+i+',this.value)" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
+  const W1=26,W2=46,W3=130;
+  const S='position:sticky;z-index:2;';
+  const SH='position:sticky;z-index:3;';
+  const BG_H='background:#fff5f5;';
+  const BG_N='background:#fff;';
+  const hdr=cols.map((c,i)=>'<th colspan="2" style="text-align:center;background:#ffeaea;border-left:2px solid #ddd;padding:4px 3px;min-width:110px;vertical-align:top"><div style="display:flex;align-items:center;gap:2px"><input style="background:transparent;border:none;border-bottom:1px dashed #c0392b;font-family:Nunito,sans-serif;font-weight:800;font-size:.62rem;text-align:center;flex:1;min-width:60px;outline:none;color:var(--rd);cursor:pointer;padding:3px 2px" value=\''+c+'\' title="Renommer" onchange="renameColS('+i+',this.value)" onclick="this.select()"><button onclick="suppColS('+i+')" title="Supprimer" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:.65rem;padding:0 1px;flex-shrink:0;opacity:.5" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.5">✕</button></div></th>').join('');
   const sub=cols.map(()=>'<th style="font-size:.52rem;color:var(--rd);border-left:1px solid #eee;padding:3px 2px">Taille</th><th style="font-size:.52rem;color:#2980b9;padding:3px 2px">Nb</th>').join('');
   const rows=list.map(function(s){
     const cells=cols.map(function(c){return '<td style="border-left:1px solid #eee;padding:3px 4px"><input class="nce nscell" data-sid="'+s.id+'" data-col="'+c+'" data-titre="'+title+'" value="'+(s.tailles[c]||'')+'" placeholder="—"></td><td style="padding:3px 4px"><input class="nce nb nscell" data-sid="'+s.id+'" data-col="'+c+'_nb" data-titre="'+title+'" value="'+(s.tailles[c+'_nb']||'')+'" placeholder="0"></td>';}).join('');
     return '<tr data-draggable="1" data-sid="'+s.id+'" data-titre="'+title+'">'
-    +'<td class="drag-handle" title="Glisser pour réordonner">⠿</td>'
-    +'<td style="font-family:\'Bebas Neue\',sans-serif;color:var(--r);cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')">'+s.initiales+'</td>'
-    +'<td style="white-space:nowrap;cursor:pointer" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')"><span style="font-weight:800">'+s.nom+'</span></td>'
+    +'<td class="drag-handle" style="'+S+'left:0;'+BG_N+'" title="Glisser pour réordonner">⠿</td>'
+    +'<td style="'+S+'left:'+W1+'px;'+BG_N+'font-family:\'Bebas Neue\',sans-serif;color:var(--r);cursor:pointer;border-right:1px solid #e0e0e0" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')">'+s.initiales+'</td>'
+    +'<td style="'+S+'left:'+(W1+W2)+'px;'+BG_N+'white-space:nowrap;cursor:pointer;border-right:2px solid #ddd" onclick="openStaffEdit(\''+s.id+'\',\''+title+'\')"><span style="font-weight:800">'+s.nom+'</span></td>'
     +cells+'</tr>';
   }).join('');
   const sortBtn='<button class="btn btn-sm" onclick="sortStaffByName(\''+title+'\')" title="Trier par nom" style="background:#f0f0f0;color:#555;border:1px solid #ddd">🔤</button>';
-  cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">👔 Staff '+title+'<span style="margin-left:10px;background:#fff;color:var(--rd);border-radius:20px;padding:3px 12px;font-size:.85rem;font-weight:900;vertical-align:middle;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-block">'+list.length+'</span></span><div style="display:flex;gap:6px">'+sortBtn+'<button class="btn btn-or btn-sm" onclick="ajoutStaff(\''+title+'\')">➕</button><button class="btn btn-g btn-sm" onclick="ajoutColS()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expNumXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr><th rowspan="2" style="vertical-align:middle;min-width:26px"></th><th rowspan="2" style="vertical-align:middle">Init.</th><th rowspan="2" style="vertical-align:middle">Nom</th>'+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  const hdrRow1='<th rowspan="2" style="'+SH+'left:0;vertical-align:middle;min-width:'+W1+'px;'+BG_H+'border-right:1px solid #ddd"></th>'
+    +'<th rowspan="2" style="'+SH+'left:'+W1+'px;vertical-align:middle;min-width:'+W2+'px;'+BG_H+'border-right:1px solid #ddd">Init.</th>'
+    +'<th rowspan="2" style="'+SH+'left:'+(W1+W2)+'px;vertical-align:middle;min-width:'+W3+'px;'+BG_H+'border-right:2px solid #bbb">Nom</th>';
+  cont.innerHTML='<div class="ntw"><div class="nth"><span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.05rem;letter-spacing:1px">👔 Staff '+title+'<span style="margin-left:10px;background:#fff;color:var(--rd);border-radius:20px;padding:3px 12px;font-size:.85rem;font-weight:900;vertical-align:middle;box-shadow:0 1px 4px rgba(0,0,0,.25);display:inline-block">'+list.length+'</span></span><div style="display:flex;gap:6px">'+sortBtn+'<button class="btn btn-or btn-sm" onclick="ajoutStaff(\''+title+'\')">➕</button><button class="btn btn-g btn-sm" onclick="ajoutColS()">＋ Col.</button><button class="btn btn-r btn-sm" onclick="expNumXLSX()">⬇ Excel</button></div></div><div class="nts"><table class="ntbl"><thead><tr>'+hdrRow1+hdr+'</tr><tr>'+sub+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
 }
 function sortJoueursByNum(groupe){
   // Réordonne les joueurs du groupe dans le tableau JOUEURS par numéro croissant
@@ -2861,7 +2878,7 @@ var _SYNC_TOKEN = 'sdr-reims-2026';
 var _DEFAULTS_TS = 1784196131928;
 var _LS   = 'sdr_reims';
 var _t    = null;   // timer debounce
-var _busy = false;  // sauvegarde cloud en cours
+var _syncSaving = false;
 
 // ── Toast notification ──
 function _toast(msg, dur) {
@@ -2881,53 +2898,81 @@ function _toast(msg, dur) {
 
 function _setBtn(ic) { var b = document.getElementById('saveBtnIcon'); if (b) b.textContent = ic; }
 
-// ── Indicateur sync (pastille colorée dans le header) ──
+// ── Indicateur sync (pastille colorée = cliquable pour sync manuelle) ──
 function _addDot() {
   var hi = document.querySelector('.hi');
   if (!hi || document.getElementById('_d')) return;
   var d = document.createElement('div');
   d.id = '_d';
-  d.style.cssText = 'width:10px;height:10px;border-radius:50%;background:#aaa;flex-shrink:0;margin-left:4px;transition:background .4s';
-  d.title = 'Statut sync multi-appareils';
+  d.title = 'Sync — toucher pour synchroniser maintenant';
+  d.style.cssText = 'width:10px;height:10px;border-radius:50%;background:#aaa;flex-shrink:0;margin-left:4px;transition:background .4s;cursor:pointer';
+  d.onclick = function(){ _syncNow(); };
   hi.appendChild(d);
 }
 function _dot(s) {
   var d = document.getElementById('_d');
-  if (d) d.style.background = {ok:'#27ae60', saving:'#e67e22', err:'#e74c3c', off:'#aaa'}[s] || '#aaa';
+  if (d) d.style.background = {ok:'#27ae60',saving:'#e67e22',err:'#e74c3c',off:'#aaa'}[s]||'#aaa';
 }
 
 // ── Sauvegarde sur le Worker KV ──
+// Pas de guard _busy : si une sauvegarde est en cours, on laisse quand même partir la suivante
 function _cloudSave() {
-  if (_busy) return;
-  _busy = true;
   _dot('saving');
+  var payload = JSON.stringify(_getState());
+  console.log('[SYNC save] payload', payload.length, 'octets, ts', JSON.parse(payload).ts);
   fetch(_SYNC_URL + '/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-SDR-Token': _SYNC_TOKEN },
-    body: JSON.stringify(_getState())
+    body: payload
   }).then(function(r) {
-    _busy = false;
-    _dot(r.ok ? 'ok' : 'err');
-    if (!r.ok) console.warn('Sync KV erreur HTTP', r.status);
+    if (r.ok) {
+      _dot('ok');
+      console.log('[SYNC save] ✅ OK');
+    } else {
+      _dot('err');
+      r.text().then(function(t){ console.warn('[SYNC save] ❌ HTTP', r.status, t); });
+    }
   }).catch(function(e) {
-    _busy = false;
     _dot('err');
-    console.warn('Sync KV réseau:', e && e.message);
+    console.warn('[SYNC save] ❌ réseau:', e && e.message);
   });
 }
 
 // ── Chargement depuis le Worker KV ──
 function _cloudLoad() {
+  console.log('[SYNC load] demande au Worker KV…');
   return fetch(_SYNC_URL + '/load', {
     headers: { 'X-SDR-Token': _SYNC_TOKEN }
   }).then(function(r) {
-    if (!r.ok) return null;
+    if (!r.ok) { console.warn('[SYNC load] HTTP', r.status); return null; }
     return r.json();
   }).then(function(resp) {
-    if (!resp || !resp.ok || !resp.data) return null;
+    if (!resp || !resp.ok || !resp.data) { console.log('[SYNC load] aucune donnée'); return null; }
     var d = resp.data;
+    console.log('[SYNC load] ts cloud', d.ts, '| joueurs', d.JOUEURS && d.JOUEURS.length);
     return (d.JOUEURS && d.JOUEURS.length > 0) ? d : null;
-  }).catch(function() { return null; });
+  }).catch(function(e) { console.warn('[SYNC load] réseau:', e && e.message); return null; });
+}
+
+// ── Sync manuelle (touche sur la pastille ou bouton ENREG) ──
+function _syncNow() {
+  _dot('saving');
+  _toast('🔄 Synchronisation…');
+  _lsSave();
+  _cloudLoad().then(function(cloud) {
+    var localNow = _lsLoad();
+    var lTs = (localNow && localNow.ts) ? localNow.ts : _DEFAULTS_TS;
+    if (cloud && cloud.ts && cloud.ts > lTs) {
+      _setState(cloud);
+      _lsSave();
+      _renderAll();
+      _dot('ok');
+      _toast('✅ Données mises à jour depuis le cloud !');
+    } else {
+      _cloudSave();
+      _toast('✅ Données envoyées vers le cloud !');
+    }
+  }).catch(function() { _cloudSave(); });
 }
 
 // ── État complet ──
@@ -3076,12 +3121,12 @@ function _renderAll() {
 
 // ── API publique ──
 function sbSchedule() {
-  _lsSave();           // local immédiat
+  _lsSave();           // sauvegarde locale immédiate
   _setBtn('💾*');
   clearTimeout(_t);
   _t = setTimeout(function() {
     _setBtn('💾');
-    _cloudSave();      // cloud après 2s de calme
+    _cloudSave();      // envoi cloud après 2s sans nouvelle saisie
   }, 2000);
 }
 
@@ -3092,10 +3137,10 @@ function sbSave() {
 async function manuSave() {
   _setBtn('⏳');
   _lsSave();
-  _cloudSave();
+  _cloudSave();  // envoi cloud immédiat à chaque ENREG
   setTimeout(function() {
     _setBtn('✅');
-    _toast('✅ Données sauvegardées !');
+    _toast('✅ Données sauvegardées et envoyées !');
     setTimeout(function() { _setBtn('💾'); }, 2500);
   }, 400);
 }
@@ -3399,35 +3444,46 @@ try { showStartupAlert(); } catch(e) {}
 (function() {
   var ls = _lsLoad();
   var lsIsNewer = ls && ls.ts && ls.ts > _DEFAULTS_TS;
+  console.log('[INIT] ts local:', ls && ls.ts, '| _DEFAULTS_TS:', _DEFAULTS_TS, '| local plus récent:', lsIsNewer);
 
-  // 1. Afficher les données disponibles immédiatement (local ou défauts)
+  // 1. Afficher immédiatement la meilleure donnée disponible (local ou défauts du fichier)
   if (lsIsNewer) {
     _setState(ls);
+    console.log('[INIT] Données locales chargées — joueurs:', JOUEURS.length);
+  } else {
+    console.log('[INIT] Données par défaut du fichier utilisées — joueurs:', JOUEURS.length);
   }
   _renderAll();
   _toast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
 
-  // 2. En arrière-plan, vérifier si le cloud est plus récent (autre appareil)
+  // 2. En arrière-plan, vérifier si le cloud a des données plus récentes (autre appareil)
   _cloudLoad().then(function(cloud) {
     if (!cloud) {
-      // Cloud vide ou indisponible → pousser les données locales vers le cloud
+      // Cloud vide ou indisponible → pousser nos données vers le cloud
+      console.log('[INIT] Cloud vide — on pousse nos données');
       _cloudSave();
       _dot('ok');
       return;
     }
-    var localTs = lsIsNewer ? ls.ts : _DEFAULTS_TS;
-    if (cloud.ts && cloud.ts > localTs) {
-      // Le cloud est plus récent → mettre à jour l'affichage
+    // Re-lire le localStorage AU MOMENT où le cloud répond (l'utilisateur a pu sauvegarder entre-temps)
+    var currentLs = _lsLoad();
+    var currentLocalTs = (currentLs && currentLs.ts) ? currentLs.ts : _DEFAULTS_TS;
+    console.log('[INIT] Comparaison: ts cloud', cloud.ts, 'vs ts local actuel', currentLocalTs);
+    if (cloud.ts && cloud.ts > currentLocalTs) {
+      // Cloud plus récent → on met à jour
+      console.log('[INIT] ✅ Cloud plus récent → mise à jour');
       _setState(cloud);
       _lsSave();
       _renderAll();
-      _toast('🔄 Sync — données mises à jour');
+      _toast('🔄 Sync — données mises à jour depuis le cloud');
     } else {
-      // Local plus récent → pousser vers le cloud
+      // Local plus récent → on envoie au cloud pour synchroniser l'autre appareil
+      console.log('[INIT] Local plus récent → on pousse vers le cloud');
       _cloudSave();
     }
     _dot('ok');
-  }).catch(function() {
+  }).catch(function(e) {
+    console.warn('[INIT] Erreur cloud:', e && e.message);
     _dot('err');
   });
 })();
