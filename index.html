@@ -3064,9 +3064,52 @@ function _setState(s) {
   return true;
 }
 
-// ── localStorage ──
+// ── localStorage + IndexedDB (double persistance, robuste sur iOS/Safari) ──
 function _lsSave() {
-  try { localStorage.setItem(_LS, JSON.stringify(_getState())); } catch(e) {}
+  var json;
+  try { json = JSON.stringify(_getState()); } catch(e) { return; }
+  // 1. localStorage (rapide, synchrone)
+  try { localStorage.setItem(_LS, json); } catch(e) {}
+  // 2. IndexedDB (résiste au nettoyage automatique d'iOS, quota bien plus élevé)
+  _idbSave(json);
+}
+
+// IndexedDB — stockage durable de secours
+var _IDB_NAME = 'sdr_db', _IDB_STORE = 'state', _IDB_KEY = 'current';
+function _idbOpen() {
+  return new Promise(function(resolve, reject) {
+    if (!window.indexedDB) { reject('no-idb'); return; }
+    var req = indexedDB.open(_IDB_NAME, 1);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains(_IDB_STORE)) db.createObjectStore(_IDB_STORE);
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror = function() { reject('idb-err'); };
+  });
+}
+function _idbSave(json) {
+  _idbOpen().then(function(db) {
+    try {
+      var tx = db.transaction(_IDB_STORE, 'readwrite');
+      tx.objectStore(_IDB_STORE).put(json, _IDB_KEY);
+    } catch(e) {}
+  }).catch(function(){});
+}
+function _idbLoad() {
+  return _idbOpen().then(function(db) {
+    return new Promise(function(resolve) {
+      try {
+        var tx = db.transaction(_IDB_STORE, 'readonly');
+        var req = tx.objectStore(_IDB_STORE).get(_IDB_KEY);
+        req.onsuccess = function() {
+          if (!req.result) { resolve(null); return; }
+          try { resolve(JSON.parse(req.result)); } catch(e) { resolve(null); }
+        };
+        req.onerror = function() { resolve(null); };
+      } catch(e) { resolve(null); }
+    });
+  }).catch(function() { return null; });
 }
 
 // Scanne TOUTES les anciennes clés utilisées au fil des versions précédentes de l'app,
@@ -3443,48 +3486,58 @@ try { showStartupAlert(); } catch(e) {}
 
 (function() {
   var ls = _lsLoad();
-  var lsIsNewer = ls && ls.ts && ls.ts > _DEFAULTS_TS;
-  console.log('[INIT] ts local:', ls && ls.ts, '| _DEFAULTS_TS:', _DEFAULTS_TS, '| local plus récent:', lsIsNewer);
+  var lsTs = (ls && ls.ts) ? ls.ts : 0;
+  console.log('[INIT] ts localStorage:', lsTs, '| _DEFAULTS_TS:', _DEFAULTS_TS);
 
-  // 1. Afficher immédiatement la meilleure donnée disponible (local ou défauts du fichier)
-  if (lsIsNewer) {
+  // 1. Afficher immédiatement la meilleure donnée locale disponible
+  if (ls && lsTs > _DEFAULTS_TS) {
     _setState(ls);
-    console.log('[INIT] Données locales chargées — joueurs:', JOUEURS.length);
+    console.log('[INIT] localStorage chargé — joueurs:', JOUEURS.length);
   } else {
-    console.log('[INIT] Données par défaut du fichier utilisées — joueurs:', JOUEURS.length);
+    console.log('[INIT] Données par défaut du fichier — joueurs:', JOUEURS.length);
   }
   _renderAll();
   _toast('✅ ' + JOUEURS.length + ' joueurs · ' + DATA.length + ' articles');
 
-  // 2. En arrière-plan, vérifier si le cloud a des données plus récentes (autre appareil)
-  _cloudLoad().then(function(cloud) {
-    if (!cloud) {
-      // Cloud vide ou indisponible → pousser nos données vers le cloud
-      console.log('[INIT] Cloud vide — on pousse nos données');
-      _cloudSave();
-      _dot('ok');
-      return;
-    }
-    // Re-lire le localStorage AU MOMENT où le cloud répond (l'utilisateur a pu sauvegarder entre-temps)
+  // 2. Vérifier IndexedDB (peut contenir des données que localStorage a perdues sur iOS)
+  _idbLoad().then(function(idb) {
+    var idbTs = (idb && idb.ts) ? idb.ts : 0;
     var currentLs = _lsLoad();
-    var currentLocalTs = (currentLs && currentLs.ts) ? currentLs.ts : _DEFAULTS_TS;
-    console.log('[INIT] Comparaison: ts cloud', cloud.ts, 'vs ts local actuel', currentLocalTs);
-    if (cloud.ts && cloud.ts > currentLocalTs) {
-      // Cloud plus récent → on met à jour
-      console.log('[INIT] ✅ Cloud plus récent → mise à jour');
-      _setState(cloud);
+    var currentTs = (currentLs && currentLs.ts) ? currentLs.ts : _DEFAULTS_TS;
+    if (idb && idbTs > currentTs) {
+      console.log('[INIT] IndexedDB plus récent (' + idbTs + ' > ' + currentTs + ') → restauration');
+      _setState(idb);
       _lsSave();
       _renderAll();
-      _toast('🔄 Sync — données mises à jour depuis le cloud');
-    } else {
-      // Local plus récent → on envoie au cloud pour synchroniser l'autre appareil
-      console.log('[INIT] Local plus récent → on pousse vers le cloud');
-      _cloudSave();
+      _toast('🔄 Données restaurées');
     }
-    _dot('ok');
-  }).catch(function(e) {
-    console.warn('[INIT] Erreur cloud:', e && e.message);
-    _dot('err');
+
+    // 3. Enfin, vérifier le cloud (autre appareil)
+    _cloudLoad().then(function(cloud) {
+      if (!cloud) {
+        console.log('[INIT] Cloud vide → on pousse nos données');
+        _cloudSave();
+        _dot('ok');
+        return;
+      }
+      var ls2 = _lsLoad();
+      var localTs2 = (ls2 && ls2.ts) ? ls2.ts : _DEFAULTS_TS;
+      console.log('[INIT] Comparaison finale: ts cloud', cloud.ts, 'vs local', localTs2);
+      if (cloud.ts && cloud.ts > localTs2) {
+        console.log('[INIT] ✅ Cloud plus récent → mise à jour');
+        _setState(cloud);
+        _lsSave();
+        _renderAll();
+        _toast('🔄 Données mises à jour depuis le cloud');
+      } else {
+        console.log('[INIT] Local à jour → on pousse vers le cloud');
+        _cloudSave();
+      }
+      _dot('ok');
+    }).catch(function(e) {
+      console.warn('[INIT] Erreur cloud:', e && e.message);
+      _dot('err');
+    });
   });
 })();
 </script>
