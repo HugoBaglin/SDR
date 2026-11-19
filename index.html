@@ -6,6 +6,7 @@
 <title>SDR — Gestion des Stocks</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{--r:#C8102E;--rd:#9B0E23;--rl:#e8354f;--g:#f2f2f2;--b:#e0e0e0;--m:#aaa;--n:#1a1a1a;--or:#FFD700;--vt:#27ae60;--og:#e67e22;--ra:#c0392b}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -302,9 +303,25 @@ tr.row-dragging td{border-top:2px solid var(--or)}
   .ntbl{font-size:.78rem}
   .ntbl tbody td,.ntbl thead th{padding:6px 8px}
 }
+#loginOv{position:fixed;inset:0;z-index:99999;background:linear-gradient(120deg,#9B0E23,#C8102E 55%,#e8354f);display:none;align-items:center;justify-content:center;padding:20px}
+#loginOv form{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center}
+#loginOv h2{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:2px;color:#C8102E;margin-bottom:4px}
+#loginOv p{font-size:.8rem;color:#777;margin-bottom:16px}
+#loginOv input{width:100%;padding:13px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:16px;margin-bottom:10px;font-family:inherit}
+#loginOv button{width:100%;padding:13px;border:0;border-radius:10px;background:#C8102E;color:#fff;font-weight:800;font-size:1rem;font-family:inherit;cursor:pointer}
+#loginOv button:disabled{opacity:.6}
+#loginMsg{min-height:1.2em;margin-top:10px;font-size:.82rem;color:#c0392b;font-weight:700}
+#roBanner{display:none;background:#e67e22;color:#fff;text-align:center;font-weight:800;font-size:.8rem;padding:6px}
+#_lo{display:none;background:rgba(255,255,255,.2);border:0;color:#fff;border-radius:8px;padding:4px 9px;margin-left:6px;cursor:pointer;font-size:.9rem;flex-shrink:0}
 </style>
 </head>
 <body>
+<div id="loginOv"><form onsubmit="return _doLogin(event)">
+<h2>SDR — GESTION DES STOCKS</h2><p>Connectez-vous avec votre compte Stade de Reims</p>
+<input id="loginEmail" type="email" placeholder="E-mail" autocomplete="username" autocapitalize="none" required>
+<input id="loginPwd" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+<button id="loginBtn" type="submit">Se connecter</button><div id="loginMsg"></div></form></div>
+<div id="roBanner">👁 Lecture seule — vous ne pouvez pas modifier les stocks</div>
 <header>
   <div class="hi">
     <img class="logo" src="data:image/png;base64,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" alt="SDR">
@@ -2870,8 +2887,6 @@ function showStartupAlert(){
 // ══════════════════════════════════════════════════════
 
 // URL du Worker de synchronisation (à mettre à jour après déploiement)
-var _SYNC_URL = 'https://sdr-sync.hugo-baglin.workers.dev';
-var _SYNC_TOKEN = 'sdr-reims-2026';
 
 // Horodatage de génération de ce fichier — toute donnée locale plus ANCIENNE
 // que ceci est ignorée au profit des valeurs par défaut embarquées.
@@ -2908,71 +2923,230 @@ function _addDot() {
   d.style.cssText = 'width:10px;height:10px;border-radius:50%;background:#aaa;flex-shrink:0;margin-left:4px;transition:background .4s;cursor:pointer';
   d.onclick = function(){ _syncNow(); };
   hi.appendChild(d);
+  var lo = document.createElement('button'); lo.id='_lo'; lo.textContent='⎋'; lo.onclick=function(){ _doLogout(); }; hi.appendChild(lo);
 }
 function _dot(s) {
   var d = document.getElementById('_d');
   if (d) d.style.background = {ok:'#27ae60',saving:'#e67e22',err:'#e74c3c',off:'#aaa'}[s]||'#aaa';
 }
 
-// ── Sauvegarde sur le Worker KV ──
-// Pas de guard _busy : si une sauvegarde est en cours, on laisse quand même partir la suivante
-function _cloudSave() {
-  _dot('saving');
-  var payload = JSON.stringify(_getState());
-  console.log('[SYNC save] payload', payload.length, 'octets, ts', JSON.parse(payload).ts);
-  fetch(_SYNC_URL + '/save', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-SDR-Token': _SYNC_TOKEN },
-    body: payload
-  }).then(function(r) {
-    if (r.ok) {
-      _dot('ok');
-      console.log('[SYNC save] ✅ OK');
-    } else {
-      _dot('err');
-      r.text().then(function(t){ console.warn('[SYNC save] ❌ HTTP', r.status, t); });
+// ── SYNCHRONISATION TEMPS RÉEL — Supabase (comptes e-mail + Realtime) ──
+var SB_URL = 'https://ytormfripjehgkbodecz.supabase.co';
+var SB_KEY = 'sb_publishable_BLuiH8ZximVxsOlhjPQX6Q_9RxCPsCh';   // clé publique (protégée par les règles RLS)
+var _LEGACY_URL = 'https://sdr-sync.hugo-baglin.workers.dev';       // ancien Worker : lecture seule, migration unique
+var _LEGACY_TOKEN = 'sdr-reims-2026';
+var _BASE_LS = 'sdr_base_v1';
+var _sb = null, _sbUser = null, _sbRole = 'lecture', _sbChan = null;
+var _sbBase = {};            // clé -> dernière version connue du serveur (JSON canonique)
+var _sbBusy = false, _sbAgain = false, _sbMine = {}, _sbRtT = null, _sbPoll = null;
+try { _sbBase = JSON.parse(localStorage.getItem(_BASE_LS) || '{}') || {}; } catch (e) { _sbBase = {}; }
+
+// JSON canonique (clés triées) : Postgres jsonb réordonne les clés des objets
+function _canon(v) {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v);
+  if (Array.isArray(v)) return '[' + v.map(_canon).join(',') + ']';
+  return '{' + Object.keys(v).sort().filter(function (k) { return v[k] !== undefined; })
+    .map(function (k) { return JSON.stringify(k) + ':' + _canon(v[k]); }).join(',') + '}';
+}
+function _eq(a, b) { return _canon(a) === _canon(b); }
+function _hasIds(a) { return Array.isArray(a) && a.every(function (x) { return x && typeof x === 'object' && x.id !== undefined; }); }
+
+// Fusion à 3 voies (base = dernière version serveur connue, l = local, r = distant)
+function _merge3(b, l, r, key) {
+  if (_eq(l, r)) return l;
+  if (b !== undefined) { if (_eq(l, b)) return r; if (_eq(r, b)) return l; }
+  if (Array.isArray(l) && Array.isArray(r)) {
+    var ba = Array.isArray(b) ? b : [];
+    if (_hasIds(l) && _hasIds(r) && _hasIds(ba)) return _mergeById(ba, l, r);
+    if (key === 'HISTORIQUE') {                       // journal : on garde tout, sans doublon
+      var seen = {}, out = [];
+      r.concat(l).forEach(function (x) { var c = _canon(x); if (!seen[c]) { seen[c] = 1; out.push(x); } });
+      return out;
     }
-  }).catch(function(e) {
-    _dot('err');
-    console.warn('[SYNC save] ❌ réseau:', e && e.message);
+    return l;
+  }
+  if (l && r && typeof l === 'object' && typeof r === 'object') {
+    var bb = (b && typeof b === 'object' && !Array.isArray(b)) ? b : {};
+    var res = {}, ks = {};
+    [bb, l, r].forEach(function (o) { Object.keys(o).forEach(function (k) { ks[k] = 1; }); });
+    Object.keys(ks).forEach(function (k) {
+      var inL = k in l, inR = k in r, inB = k in bb;
+      if (inL && inR) res[k] = _merge3(bb[k], l[k], r[k]);
+      else if (inL) { if (!(inB && _eq(l[k], bb[k]))) res[k] = l[k]; }   // supprimé ailleurs sauf si modifié ici
+      else { if (!(inB && _eq(r[k], bb[k]))) res[k] = r[k]; }            // supprimé ici sauf si modifié ailleurs
+    });
+    return res;
+  }
+  return l;                                           // même champ modifié des deux côtés : le local gagne
+}
+function _mergeById(ba, l, r) {
+  var B = {}, L = {}, R = {}, out = [], seen = {};
+  ba.forEach(function (x) { B[x.id] = x; }); l.forEach(function (x) { L[x.id] = x; }); r.forEach(function (x) { R[x.id] = x; });
+  r.forEach(function (x) {
+    seen[x.id] = 1;
+    if (x.id in L) out.push(_merge3(B[x.id], L[x.id], x));
+    else if (x.id in B) { if (!_eq(x, B[x.id])) out.push(x); }          // supprimé ici, sauf si modifié ailleurs
+    else out.push(x);                                                    // ajouté ailleurs
   });
+  l.forEach(function (x) {
+    if (seen[x.id]) return;
+    if (x.id in B) { if (!_eq(x, B[x.id])) out.push(x); }               // supprimé ailleurs, sauf si modifié ici
+    else out.push(x);                                                    // ajouté ici
+  });
+  return out;
 }
 
-// ── Chargement depuis le Worker KV ──
-function _cloudLoad() {
-  console.log('[SYNC load] demande au Worker KV…');
-  return fetch(_SYNC_URL + '/load', {
-    headers: { 'X-SDR-Token': _SYNC_TOKEN }
-  }).then(function(r) {
-    if (!r.ok) { console.warn('[SYNC load] HTTP', r.status); return null; }
-    return r.json();
-  }).then(function(resp) {
-    if (!resp || !resp.ok || !resp.data) { console.log('[SYNC load] aucune donnée'); return null; }
-    var d = resp.data;
-    console.log('[SYNC load] ts cloud', d.ts, '| joueurs', d.JOUEURS && d.JOUEURS.length);
-    return (d.JOUEURS && d.JOUEURS.length > 0) ? d : null;
-  }).catch(function(e) { console.warn('[SYNC load] réseau:', e && e.message); return null; });
+function _sbKeys() { return Object.keys(_getState()).filter(function (k) { return k !== 'ts'; }); }
+function _canEdit() { return _sbRole === 'editeur' || _sbRole === 'admin'; }
+
+// Ancien Worker Cloudflare : utilisé une seule fois pour reprendre les données existantes
+function _legacyLoad() {
+  return fetch(_LEGACY_URL + '/load', { headers: { 'X-SDR-Token': _LEGACY_TOKEN } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) { return (j && j.ok && j.data && j.data.JOUEURS && j.data.JOUEURS.length) ? j.data : null; })
+    .catch(function () { return null; });
 }
 
-// ── Sync manuelle (touche sur la pastille ou bouton ENREG) ──
-function _syncNow() {
-  _dot('saving');
-  _toast('🔄 Synchronisation…');
-  _lsSave();
-  _cloudLoad().then(function(cloud) {
-    var localNow = _lsLoad();
-    var lTs = (localNow && localNow.ts) ? localNow.ts : _DEFAULTS_TS;
-    if (cloud && cloud.ts && cloud.ts > lTs) {
-      _setState(cloud);
-      _lsSave();
-      _renderAll();
-      _dot('ok');
-      _toast('✅ Données mises à jour depuis le cloud !');
-    } else {
-      _cloudSave();
-      _toast('✅ Données envoyées vers le cloud !');
+// ── Synchronisation : lit le serveur, fusionne, écrit seulement ce qui a changé ──
+async function _sbSync(manual) {
+  if (!_sb || !_sbUser) return;
+  if (_sbBusy) { _sbAgain = true; return; }
+  _sbBusy = true; _dot('saving');
+  var changedBy = {}, appliedRemote = false;
+  try {
+    for (var attempt = 0; attempt < 4; attempt++) {
+      var q = await _sb.from('sdr_data').select('key,value,updated_at,updated_by');
+      if (q.error) throw q.error;
+      var remote = {};
+      q.data.forEach(function (row) { remote[row.key] = row; });
+
+      // Première connexion à une base vide : on reprend l'ancien Worker s'il est plus récent que le local
+      if (!q.data.length && !Object.keys(_sbBase).length) {
+        var legacy = await _legacyLoad();
+        var lts = (_lsLoad() || {}).ts || _DEFAULTS_TS;
+        if (legacy && legacy.ts && legacy.ts > lts) { _setState(legacy); _lsSave(); }
+      }
+
+      var st = _getState(), keys = _sbKeys(), out = {}, writes = [];
+      keys.forEach(function (k) {
+        var l = st[k], rr = remote[k], m;
+        if (!rr) { m = l; if (_canEdit()) writes.push({ k: k, val: m, ver: null }); }
+        else if (!_canEdit() || _sbBase[k] === undefined) { m = rr.value; }      // lecture seule / premier lancement : le serveur fait foi
+        else {
+          m = _merge3(JSON.parse(_sbBase[k]), l, rr.value, k);
+          if (!_eq(m, rr.value)) writes.push({ k: k, val: m, ver: rr.updated_at });
+        }
+        out[k] = m;
+      });
+
+      var conflict = false;
+      for (var i = 0; i < writes.length; i++) {
+        var w = writes[i], res;
+        if (w.ver === null) res = await _sb.from('sdr_data').insert({ key: w.k, value: w.val }).select('updated_at');
+        else res = await _sb.from('sdr_data').update({ value: w.val }).eq('key', w.k).eq('updated_at', w.ver).select('updated_at');
+        if (res.error) { if (res.error.code === '23505') { conflict = true; continue; } throw res.error; }
+        if (!res.data || !res.data.length) { conflict = true; continue; }    // quelqu'un a écrit entre-temps
+        _sbMine[res.data[0].updated_at] = 1;
+        remote[w.k] = { value: w.val, updated_at: res.data[0].updated_at, updated_by: null };
+      }
+
+      // Mise à jour de l'état local avec le résultat fusionné
+      var cur = _getState(), differs = false;
+      keys.forEach(function (k) {
+        if (!_eq(cur[k], out[k])) {
+          differs = true; cur[k] = out[k];
+          if (remote[k] && remote[k].updated_by) changedBy[remote[k].updated_by] = 1;
+        }
+        if (remote[k] && !(conflict && writes.some(function (w) { return w.k === k; }))) _sbBase[k] = _canon(remote[k].value);
+      });
+      if (differs) { _setState(cur); appliedRemote = true; }
+      try { localStorage.setItem(_BASE_LS, JSON.stringify(_sbBase)); } catch (e) {}
+      if (!conflict) break;
     }
-  }).catch(function() { _cloudSave(); });
+    _lsSave();
+    if (appliedRemote) {
+      _renderAll();
+      var who = Object.keys(changedBy).map(function (e) { return e.split('@')[0]; }).join(', ');
+      _toast('🔄 Mis à jour' + (who ? ' par ' + who : ''));
+    } else if (manual) _toast('✅ Tout est à jour');
+    _dot('ok');
+  } catch (e) {
+    console.warn('[SYNC] erreur:', e && (e.message || e));
+    _dot('err');
+    if (manual) _toast('⚠️ Synchronisation impossible (hors ligne ?)', 4000);
+  }
+  _sbBusy = false;
+  if (_sbAgain) { _sbAgain = false; _sbSync(); }
+}
+
+// Compatibilité avec le reste de l'application
+function _cloudSave() { _sbSync(); }
+function _syncNow() { _lsSave(); _sbSync(true); }
+
+// ── Temps réel ──
+function _sbSubscribe() {
+  if (_sbChan) return;
+  _sbChan = _sb.channel('sdr_data_rt')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sdr_data' }, function (p) {
+      var ua = p && p.new && p.new.updated_at;
+      if (ua && _sbMine[ua]) return;                 // écho de notre propre écriture
+      clearTimeout(_sbRtT); _sbRtT = setTimeout(function () { _sbSync(); }, 250);
+    })
+    .subscribe(function (status) { if (status === 'SUBSCRIBED') _dot('ok'); });
+  clearInterval(_sbPoll);
+  _sbPoll = setInterval(function () { if (document.visibilityState === 'visible') _sbSync(); }, 30000);  // filet de sécurité
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') _sbSync(); });
+window.addEventListener('online', function () { _sbSync(); });
+
+// ── Connexion ──
+function _loginShow(msg) {
+  var o = document.getElementById('loginOv'); if (o) o.style.display = 'flex';
+  var m = document.getElementById('loginMsg'); if (m) m.textContent = msg || '';
+}
+function _loginHide() { var o = document.getElementById('loginOv'); if (o) o.style.display = 'none'; }
+async function _doLogin(ev) {
+  if (ev) ev.preventDefault();
+  var email = document.getElementById('loginEmail').value.trim();
+  var pwd = document.getElementById('loginPwd').value;
+  var btn = document.getElementById('loginBtn');
+  btn.disabled = true; _loginShow('Connexion…');
+  var r = await _sb.auth.signInWithPassword({ email: email, password: pwd });
+  btn.disabled = false;
+  if (r.error) { _loginShow('E-mail ou mot de passe incorrect.'); return false; }
+  await _onSession(r.data.session);
+  return false;
+}
+async function _doLogout() {
+  if (!confirm('Se déconnecter ?')) return;
+  try { if (_sbChan) { _sb.removeChannel(_sbChan); _sbChan = null; } } catch (e) {}
+  clearInterval(_sbPoll);
+  await _sb.auth.signOut();
+  _sbUser = null; _sbRole = 'lecture';
+  _loginShow('');
+}
+async function _onSession(session) {
+  if (!session) { _loginShow(''); return; }
+  _sbUser = session.user;
+  var p = await _sb.from('profiles').select('role').eq('id', _sbUser.id).maybeSingle();
+  _sbRole = (p.data && p.data.role) || 'lecture';
+  _loginHide();
+  var d = document.getElementById('_d');
+  if (d) d.title = _sbUser.email + ' (' + _sbRole + ') — toucher pour synchroniser';
+  var lo = document.getElementById('_lo');
+  if (lo) { lo.style.display = 'inline-block'; lo.title = 'Se déconnecter (' + _sbUser.email + ')'; }
+  var ro = document.getElementById('roBanner');
+  if (ro) ro.style.display = _canEdit() ? 'none' : 'block';
+  _sbSubscribe();
+  _sbSync();
+}
+async function _authInit() {
+  if (!window.supabase || !window.supabase.createClient) {      // CDN injoignable : mode local uniquement
+    _dot('off'); _toast('⚠️ Mode local (synchronisation indisponible)', 4000); return;
+  }
+  _sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  var s = await _sb.auth.getSession();
+  await _onSession(s.data && s.data.session);
 }
 
 // ── État complet ──
@@ -3512,32 +3686,8 @@ try { showStartupAlert(); } catch(e) {}
       _toast('🔄 Données restaurées');
     }
 
-    // 3. Enfin, vérifier le cloud (autre appareil)
-    _cloudLoad().then(function(cloud) {
-      if (!cloud) {
-        console.log('[INIT] Cloud vide → on pousse nos données');
-        _cloudSave();
-        _dot('ok');
-        return;
-      }
-      var ls2 = _lsLoad();
-      var localTs2 = (ls2 && ls2.ts) ? ls2.ts : _DEFAULTS_TS;
-      console.log('[INIT] Comparaison finale: ts cloud', cloud.ts, 'vs local', localTs2);
-      if (cloud.ts && cloud.ts > localTs2) {
-        console.log('[INIT] ✅ Cloud plus récent → mise à jour');
-        _setState(cloud);
-        _lsSave();
-        _renderAll();
-        _toast('🔄 Données mises à jour depuis le cloud');
-      } else {
-        console.log('[INIT] Local à jour → on pousse vers le cloud');
-        _cloudSave();
-      }
-      _dot('ok');
-    }).catch(function(e) {
-      console.warn('[INIT] Erreur cloud:', e && e.message);
-      _dot('err');
-    });
+    // 3. Connexion + synchronisation temps réel
+    _authInit();
   });
 })();
 </script>
